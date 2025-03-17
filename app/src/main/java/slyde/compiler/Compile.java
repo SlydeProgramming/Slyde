@@ -1,7 +1,5 @@
 package slyde.compiler;
 
-import static org.bytedeco.llvm.global.LLVM.*;
-
 import java.io.IOException;
 
 import org.antlr.v4.runtime.CharStream;
@@ -33,7 +31,7 @@ public class Compile {
 
             generator.generateLLVM(prog);
 
-            
+
 
 
         } catch (IOException e) {

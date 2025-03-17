@@ -1,4 +1,10 @@
-class test {
+class Test {
     int hello = 0;
     int hi = 2;
+
+}
+
+class test2 {
+    int hi = 4;
+    int hello = 1;
 }

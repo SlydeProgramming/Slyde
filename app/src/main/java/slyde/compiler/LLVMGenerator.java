@@ -1,5 +1,6 @@
 package slyde.compiler;
 
+import org.bytedeco.javacpp.PointerPointer;
 import org.bytedeco.llvm.LLVM.*;
 
 import slyde.compiler.AST.ASTNode;
@@ -13,11 +14,13 @@ import slyde.compiler.AST.VarDeclNode;
 
 import static org.bytedeco.llvm.global.LLVM.*;
 
+import java.util.ArrayList;
 import java.util.List;
 
 
 public class LLVMGenerator {
 
+    public LLVMContextRef context;
     public LLVMModuleRef module;
     public LLVMBuilderRef builder;
 
@@ -25,31 +28,42 @@ public class LLVMGenerator {
         LLVMInitializeNativeTarget();
         LLVMInitializeNativeAsmPrinter();
 
+        context = LLVMContextCreate();
         module = LLVMModuleCreateWithName("slyde_module");
-        builder = LLVMCreateBuilder();
+        builder = LLVMCreateBuilderInContext(context);
     }
 
     public void generateLLVM(ProgramNode prog){
         List<ClassNode> classes = prog.classes;
         for (int i = 0; i < classes.size(); i++){
             ClassNode classNode = classes.get(i);
+            List<LLVMTypeRef> fields = new ArrayList<>();
 
             for (int j = 0; j < classNode.body.size(); j++){
                 ASTNode node =  classNode.body.get(j);
+                
 
                 if(node instanceof VarDeclNode){
+                    
                     VarDeclNode varNode = (VarDeclNode) node;
                     LLVMTypeRef type = getLLVMType(varNode.type);
-                    LLVMValueRef ref = LLVMAddGlobal(module, type, varNode.name);
-                    LLVMSetLinkage(ref, LLVMPrivateLinkage);
-                    LLVMSetVisibility(ref, LLVMHiddenVisibility);
-                    LLVMValueRef initialValue = getVarValue(varNode.value);
-                    LLVMSetInitializer(ref, initialValue);
-                    
+                    fields.add(type);
+
+
+
                 }
 
-
             }
+
+            PointerPointer<LLVMTypeRef> fieldsPtr = new PointerPointer<>(fields.size());
+                for (int k = 0; k < fields.size(); k++) {
+                    fieldsPtr.put(k, fields.get(k));
+                }
+
+            LLVMTypeRef struct = LLVMStructTypeInContext(context, fieldsPtr, fields.size(), 0);
+            LLVMValueRef globalStruct = LLVMAddGlobal(module, struct, "global_struct_" + classNode.name);
+            LLVMSetLinkage(globalStruct, LLVMPrivateLinkage);
+            LLVMSetInitializer(globalStruct, LLVMConstNull(struct));
         }
 
         String str = LLVMPrintModuleToString(module).getString();

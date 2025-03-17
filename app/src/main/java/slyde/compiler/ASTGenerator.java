@@ -10,6 +10,7 @@ import slyde.compiler.AST.NumberNode;
 import slyde.compiler.AST.StringNode;
 import slyde.compiler.AST.ProgramNode;
 import slyde.compiler.AST.VarDeclNode;
+import slyde.compiler.LP.SlydeParser.ClassBodyContext;
 import slyde.compiler.LP.SlydeParser.ClassDeclarationContext;
 import slyde.compiler.LP.SlydeParser.VarDeclContext;
 
@@ -40,18 +41,26 @@ public class ASTGenerator {
 
         int childCount = ctx.getChildCount();
 
-
-        body.add(createASTNode(ctx.getChild(childCount-2)));
+        body = createClassBodyNode( (ClassBodyContext) ctx.getChild(childCount-2));
 
 
         return new ClassNode(name, body);
     }
 
+
+    public static List<ASTNode> createClassBodyNode(ClassBodyContext ctx){
+        List<ASTNode> body = new ArrayList<>();
+        for (int i =0; i < ctx.getChildCount(); i++){
+           body.add(createASTNode(ctx.getChild(i)));
+        }
+        return body;
+    }
+
     public static ASTNode createASTNode(ParseTree tree){
 
-        if (tree.getChild(0) instanceof VarDeclContext){
+        if (tree instanceof VarDeclContext){
             return createVarDeclNode((VarDeclContext) tree);
-        } else if (tree.getChild(0) instanceof TerminalNode) {
+        } else if (tree instanceof TerminalNode) {
             return createTerminalNode((TerminalNode) tree);
         }
         return null;
@@ -64,7 +73,6 @@ public class ASTGenerator {
     public static ASTNode createTerminalNode(TerminalNode ctx) {
         String text = ctx.getText();
         if (text.matches("\\d+")){
-            System.out.println(ctx.getText());
             return new NumberNode(Integer.parseInt(text));
         } else if (text.equals("yes") || text.equals("no") || text.equals("true") || text.equals("false")){
             boolean value = text.equals("yes") || text.equals("true");
