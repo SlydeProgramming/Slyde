@@ -11,7 +11,7 @@ import slyde.compiler.AST.ProgramNode;
 import slyde.compiler.LP.SlydeLexer;
 import slyde.compiler.LP.SlydeParser;
 
-public class Compile {
+public class Compiler {
     
     public static void compile(String path, String outPath){
         try {

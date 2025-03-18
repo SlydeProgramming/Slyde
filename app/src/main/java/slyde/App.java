@@ -3,8 +3,10 @@
  */
 package slyde;
 
+import slyde.compiler.Compiler;
+
 public class App {
     public static void main(String[] args) {
-        System.out.println("Hey");
+        Compiler.compile(null, null);
     }
 }
