@@ -1,4 +1,5 @@
 package slyde.compiler.LP;
+
 // Generated from ./app/src/main/java/slyde/compiler/Slyde.g4 by ANTLR 4.13.2
 import org.antlr.v4.runtime.tree.ParseTreeListener;
 

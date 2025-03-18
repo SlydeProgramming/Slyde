@@ -100,12 +100,16 @@ public class ASTGenerator {
         
     }
 
+    public static boolean isBool(String text){
+        return text.equals("yes") || text.equals("no") || text.equals("true") || text.equals("false");
+    }
+
     public static ASTNode createTerminalNode(TerminalNode ctx) {
         String text = ctx.getText();
         if (text.matches("\\d+")){
             return new NumberNode(Integer.parseInt(text));
-        } else if (text.equals("yes") || text.equals("no") || text.equals("true") || text.equals("false")){
-            boolean value = text.equals("yes") || text.equals("true");
+        } else if (isBool(text)){
+            boolean value = text.equals("yes") || text.equals("true") || text.equals("on");
             return new BooleanNode(value);
         } else {
             System.out.println(ctx.getText());

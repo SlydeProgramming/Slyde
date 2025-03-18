@@ -98,10 +98,8 @@ arrayLiteral:
 
 
 
-TRUE: 'true';
-FALSE: 'false';
-YES: 'yes';
-NO: 'no';
+TRUE: 'true' | 'yes' | 'on';
+FALSE: 'false' | 'no' | 'off';
 CLASS: 'class';
 EXTENDS: 'extends';
 IF: 'if';
@@ -117,7 +115,7 @@ CONSTRUCT: 'constructor';
 IDENTIFIER: [a-zA-Z_][a-zA-Z_0-9]*;
 NUMBER: [0-9]+;
 STRING: '"' .*? '"';
-BOOLEAN: TRUE | FALSE | YES | NO;
+BOOLEAN: TRUE | FALSE;
 
 // Whitespace
 WS: [ \t\r\n]+ -> skip;
