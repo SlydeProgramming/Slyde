@@ -8,7 +8,7 @@ classDeclaration:
     CLASS IDENTIFIER ('extends' IDENTIFIER)? '{' classBody '}';
 
 classBody: 
-    (varDecl | methodDeclaration)*;
+    (varDecl | methodDeclaration | constructor)*;
 
 // Methods (Function Overloading Supported)
 methodDeclaration: 
@@ -20,6 +20,9 @@ paramList:
 
 // Statements
 block: '{' statement* '}';
+
+constructor:
+    CONSTRUCT '(' paramList? ')' block;
 
 statement: 
     varDecl 
@@ -108,6 +111,7 @@ FOR: 'for';
 RETURN: 'return';
 PRINT: 'print';
 INPUT: 'input';
+CONSTRUCT: 'constructor';
 
 // Tokens
 IDENTIFIER: [a-zA-Z_][a-zA-Z_0-9]*;

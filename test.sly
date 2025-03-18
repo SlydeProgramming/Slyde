@@ -2,6 +2,10 @@ class Test {
     int hello = 0;
     int hi = 2;
 
+    constructor(int y){
+
+    }
+
 }
 
 class test2 {

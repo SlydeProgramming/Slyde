@@ -63,6 +63,16 @@ public class AST {
 
     }
 
+    public static class ConstructorNode extends ASTNode{
+        public List<VarDeclNode> params;
+        public BlockNode body;
+
+        public ConstructorNode(List<VarDeclNode> params, BlockNode body){
+            this.params = params;
+            this.body = body;
+        }
+    }
+
 
     public static class MethodNode extends ASTNode {
         public String returnType;

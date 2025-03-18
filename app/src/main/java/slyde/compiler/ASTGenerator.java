@@ -4,14 +4,20 @@ import org.antlr.v4.runtime.tree.ParseTree;
 import org.antlr.v4.runtime.tree.TerminalNode;
 
 import slyde.compiler.AST.ASTNode;
+import slyde.compiler.AST.BlockNode;
 import slyde.compiler.AST.BooleanNode;
 import slyde.compiler.AST.ClassNode;
+import slyde.compiler.AST.ConstructorNode;
 import slyde.compiler.AST.NumberNode;
 import slyde.compiler.AST.StringNode;
 import slyde.compiler.AST.ProgramNode;
 import slyde.compiler.AST.VarDeclNode;
+import slyde.compiler.LP.SlydeParser.BlockContext;
 import slyde.compiler.LP.SlydeParser.ClassBodyContext;
 import slyde.compiler.LP.SlydeParser.ClassDeclarationContext;
+import slyde.compiler.LP.SlydeParser.ConstructorContext;
+import slyde.compiler.LP.SlydeParser.ExprContext;
+import slyde.compiler.LP.SlydeParser.ParamListContext;
 import slyde.compiler.LP.SlydeParser.VarDeclContext;
 
 import java.util.ArrayList;
@@ -39,9 +45,7 @@ public class ASTGenerator {
 
         List<ASTNode> body = new ArrayList<>();
 
-        int childCount = ctx.getChildCount();
-
-        body = createClassBodyNode( (ClassBodyContext) ctx.getChild(childCount-2));
+        body = createClassBodyNode(ctx.classBody());
 
 
         return new ClassNode(name, body);
@@ -62,13 +66,39 @@ public class ASTGenerator {
             return createVarDeclNode((VarDeclContext) tree);
         } else if (tree instanceof TerminalNode) {
             return createTerminalNode((TerminalNode) tree);
+        } else if (tree instanceof ConstructorContext){
+            return createConstructorNode((ConstructorContext) tree);
         }
         return null;
     }
 
-    // public static boolean isNumber(){
+    public static BlockNode createBlockNode(BlockContext ctx){
+        List<ASTNode> statments = new ArrayList<>();
+        for (int i = 0; i < ctx.statement().size(); i++){
+            statments.add(createASTNode(ctx.statement(i)));
+        }
 
-    // }
+        return new BlockNode(statments);
+
+    }
+
+    public static List<VarDeclNode> createParamsListNode(ParamListContext ctx){
+        List<VarDeclNode> params = new ArrayList<>();
+
+        for (int i = 0; i < ctx.type().size(); i++){
+            params.add(new VarDeclNode(ctx.type(i).getText(), ctx.IDENTIFIER(i).getText(), null));
+        }
+
+        return params;
+    }
+
+    public static ConstructorNode createConstructorNode(ConstructorContext ctx){
+        List<VarDeclNode> params = createParamsListNode(ctx.paramList());
+        BlockNode body = createBlockNode(ctx.block());
+
+        return new ConstructorNode(params, body);
+        
+    }
 
     public static ASTNode createTerminalNode(TerminalNode ctx) {
         String text = ctx.getText();
@@ -88,17 +118,12 @@ public class ASTGenerator {
 
         String name = ctx.IDENTIFIER().getText();
 
+        ExprContext expr = ctx.expr();
+
         ASTNode value = null;
 
-        int childCount = ctx.getChildCount();
-
-        for (int i =0; i < childCount; i++){
-            ParseTree child = ctx.getChild(i);
-            if (child instanceof TerminalNode && child.getText().equals("=")){
-                i++;
-                child = ctx.getChild(i);
-                value = createASTNode(child);
-            }
+        if (expr != null){
+            value = createASTNode(expr);
         }
 
         return new VarDeclNode(type, name, value);
