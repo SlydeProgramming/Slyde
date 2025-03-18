@@ -13,10 +13,9 @@ import slyde.compiler.LP.SlydeParser;
 
 public class Compile {
     
-
-    public static void main(String[] args) {
+    public static void compile(String path, String outPath){
         try {
-            CharStream input = CharStreams.fromFileName("test.sly");
+            CharStream input = CharStreams.fromFileName(path);
 
             SlydeLexer lexer = new SlydeLexer(input);
             CommonTokenStream tokens = new CommonTokenStream(lexer);
@@ -31,12 +30,19 @@ public class Compile {
 
             generator.generateLLVM(prog);
 
+            generator.dump(outPath);
+
 
 
 
         } catch (IOException e) {
             e.printStackTrace();
         }
+
+    }
+
+    public static void main(String[] args) {
+        compile("test.sly", "slyde_module.ll");
     }
     
 }

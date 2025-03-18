@@ -16,6 +16,9 @@ import slyde.compiler.AST.VarDeclNode;
 
 import static org.bytedeco.llvm.global.LLVM.*;
 
+import java.io.BufferedWriter;
+import java.io.FileWriter;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -96,6 +99,17 @@ public class LLVMGenerator {
         // Print generated LLVM IR
         String str = LLVMPrintModuleToString(module).getString();
         System.out.println(str);
+    }
+
+    public String getString(){
+        return LLVMPrintModuleToString(module).getString();
+    }
+
+    public void dump(String path) throws IOException{
+        String str = LLVMPrintModuleToString(module).getString();
+        BufferedWriter bufferedWriter = new BufferedWriter(new FileWriter(path));
+        bufferedWriter.write(str);
+        bufferedWriter.close();
     }
 
     private static <T extends Pointer> PointerPointer<T> toPointer(T[] array){
