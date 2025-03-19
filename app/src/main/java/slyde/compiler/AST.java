@@ -160,7 +160,7 @@ public class AST {
         public BlockNode trueBranch;
         public BlockNode falseBranch;
 
-        public IfNode(ASTNode condition, BlockNode trueBranch, BlockNode falseBranch) {
+        public IfNode(ConditionalOp condition, BlockNode trueBranch, BlockNode falseBranch) {
             this.condition = condition;
             this.trueBranch = trueBranch;
             this.falseBranch = falseBranch;
@@ -171,7 +171,7 @@ public class AST {
         public ConditionalOp condition;
         public BlockNode body;
 
-        public WhileNode(ASTNode condition, BlockNode body) {
+        public WhileNode(ConditionalOp condition, BlockNode body) {
             this.condition = condition;
             this.body = body;
         }
@@ -184,7 +184,7 @@ public class AST {
         public AssignmentNode update;
         public BlockNode body;
 
-        public ForNode(VarDeclNode init, ASTNode condition, AssignmentNode update, BlockNode body) {
+        public ForNode(VarDeclNode init, ConditionalOp condition, AssignmentNode update, BlockNode body) {
             this.init = init;
             this.condition = condition;
             this.update = update;
@@ -193,7 +193,7 @@ public class AST {
     }
 
 
-    public static class MethodCallNode extends ASTNode {
+    public static class MethodCallNode extends Expr {
         public String methodName;
         public List<ASTNode> arguments;
 

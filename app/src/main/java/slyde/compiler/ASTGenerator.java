@@ -4,19 +4,25 @@ import org.antlr.v4.runtime.tree.ParseTree;
 import org.antlr.v4.runtime.tree.TerminalNode;
 
 import slyde.compiler.AST.ASTNode;
+import slyde.compiler.AST.BinaryOpNode;
 import slyde.compiler.AST.BlockNode;
 import slyde.compiler.AST.BooleanNode;
 import slyde.compiler.AST.ClassNode;
+import slyde.compiler.AST.ConditionalOp;
 import slyde.compiler.AST.ConstructorNode;
+import slyde.compiler.AST.Expr;
+import slyde.compiler.AST.MethodCallNode;
 import slyde.compiler.AST.NumberNode;
 import slyde.compiler.AST.StringNode;
 import slyde.compiler.AST.ProgramNode;
 import slyde.compiler.AST.VarDeclNode;
+import slyde.compiler.LP.SlydeParser.ArgListContext;
 import slyde.compiler.LP.SlydeParser.BlockContext;
 import slyde.compiler.LP.SlydeParser.ClassBodyContext;
 import slyde.compiler.LP.SlydeParser.ClassDeclarationContext;
 import slyde.compiler.LP.SlydeParser.ConstructorContext;
 import slyde.compiler.LP.SlydeParser.ExprContext;
+import slyde.compiler.LP.SlydeParser.MethodCallContext;
 import slyde.compiler.LP.SlydeParser.ParamListContext;
 import slyde.compiler.LP.SlydeParser.VarDeclContext;
 
@@ -88,7 +94,7 @@ public class ASTGenerator {
         } else if (ctx.methodCall() != null){
             return createMethodCallNode(ctx.methodCall());
         } else if (ctx.IDENTIFIER() != null) {
-            return createTerminalNode(ctx.IDENTIFIER());
+            return (Expr) createTerminalNode(ctx.IDENTIFIER());
         }
 
         if (ctx.expr(1) != null){

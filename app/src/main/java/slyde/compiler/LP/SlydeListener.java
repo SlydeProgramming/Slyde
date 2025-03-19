@@ -1,6 +1,5 @@
 package slyde.compiler.LP;
-
-// Generated from ./app/src/main/java/slyde/compiler/Slyde.g4 by ANTLR 4.13.2
+// Generated from app/src/main/java/slyde/compiler/Slyde.g4 by ANTLR 4.13.2
 import org.antlr.v4.runtime.tree.ParseTreeListener;
 
 /**
@@ -128,6 +127,26 @@ public interface SlydeListener extends ParseTreeListener {
 	 * @param ctx the parse tree
 	 */
 	void exitArgList(SlydeParser.ArgListContext ctx);
+	/**
+	 * Enter a parse tree produced by {@link SlydeParser#binOp}.
+	 * @param ctx the parse tree
+	 */
+	void enterBinOp(SlydeParser.BinOpContext ctx);
+	/**
+	 * Exit a parse tree produced by {@link SlydeParser#binOp}.
+	 * @param ctx the parse tree
+	 */
+	void exitBinOp(SlydeParser.BinOpContext ctx);
+	/**
+	 * Enter a parse tree produced by {@link SlydeParser#compareOp}.
+	 * @param ctx the parse tree
+	 */
+	void enterCompareOp(SlydeParser.CompareOpContext ctx);
+	/**
+	 * Exit a parse tree produced by {@link SlydeParser#compareOp}.
+	 * @param ctx the parse tree
+	 */
+	void exitCompareOp(SlydeParser.CompareOpContext ctx);
 	/**
 	 * Enter a parse tree produced by {@link SlydeParser#expr}.
 	 * @param ctx the parse tree

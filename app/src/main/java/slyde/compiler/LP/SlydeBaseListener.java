@@ -1,5 +1,5 @@
 package slyde.compiler.LP;
-// Generated from ./app/src/main/java/slyde/compiler/Slyde.g4 by ANTLR 4.13.2
+// Generated from app/src/main/java/slyde/compiler/Slyde.g4 by ANTLR 4.13.2
 
 import org.antlr.v4.runtime.ParserRuleContext;
 import org.antlr.v4.runtime.tree.ErrorNode;
@@ -156,6 +156,30 @@ public class SlydeBaseListener implements SlydeListener {
 	 * <p>The default implementation does nothing.</p>
 	 */
 	@Override public void exitArgList(SlydeParser.ArgListContext ctx) { }
+	/**
+	 * {@inheritDoc}
+	 *
+	 * <p>The default implementation does nothing.</p>
+	 */
+	@Override public void enterBinOp(SlydeParser.BinOpContext ctx) { }
+	/**
+	 * {@inheritDoc}
+	 *
+	 * <p>The default implementation does nothing.</p>
+	 */
+	@Override public void exitBinOp(SlydeParser.BinOpContext ctx) { }
+	/**
+	 * {@inheritDoc}
+	 *
+	 * <p>The default implementation does nothing.</p>
+	 */
+	@Override public void enterCompareOp(SlydeParser.CompareOpContext ctx) { }
+	/**
+	 * {@inheritDoc}
+	 *
+	 * <p>The default implementation does nothing.</p>
+	 */
+	@Override public void exitCompareOp(SlydeParser.CompareOpContext ctx) { }
 	/**
 	 * {@inheritDoc}
 	 *
