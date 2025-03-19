@@ -68,8 +68,58 @@ public class ASTGenerator {
             return createTerminalNode((TerminalNode) tree);
         } else if (tree instanceof ConstructorContext){
             return createConstructorNode((ConstructorContext) tree);
+        } else if (tree instanceof ExprContext){
+            return createExprNode((ExprContext) tree);
         }
         return null;
+    }
+
+    public static Expr createExprNode(ExprContext ctx){
+        Expr left = null;
+
+        if(ctx.expr(0) != null){
+            left = createExprNode(ctx.expr(0));
+        } else if (ctx.NUMBER() != null){
+            return (Expr) createTerminalNode(ctx.NUMBER());
+        } else if (ctx.STRING() != null) {
+            return (Expr) createTerminalNode(ctx.STRING());
+        } else if (ctx.BOOLEAN() != null) {
+            return (Expr) createTerminalNode(ctx.BOOLEAN());
+        } else if (ctx.methodCall() != null){
+            return createMethodCallNode(ctx.methodCall());
+        } else if (ctx.IDENTIFIER() != null) {
+            return createTerminalNode(ctx.IDENTIFIER());
+        }
+
+        if (ctx.expr(1) != null){
+            String operator = ctx.getChild(1).getText();
+            Expr right = createExprNode(ctx.expr(1));
+
+            if(ctx.binOp() != null){
+                return new BinaryOpNode(left, operator, right);
+            } else if (ctx.compareOp() != null) {
+                return new ConditionalOp(left, right, operator);
+            }
+        }
+
+
+
+        return left;
+    }
+
+    public static MethodCallNode createMethodCallNode(MethodCallContext ctx){
+        List<ASTNode> params = createArgsListNode(ctx.argList());
+        String name = ctx.IDENTIFIER().getText();
+
+        return new MethodCallNode(name, params);
+    }
+
+    public static List<ASTNode> createArgsListNode(ArgListContext ctx){
+        List<ASTNode> args = new ArrayList<>();
+        for (int i = 0; i < ctx.expr().size(); i++){
+            args.add(createExprNode(ctx.expr(i)));
+        }
+        return args;
     }
 
     public static BlockNode createBlockNode(BlockContext ctx){

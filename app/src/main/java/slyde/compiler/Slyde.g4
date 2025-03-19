@@ -52,11 +52,16 @@ methodCall:
 // Arguments
 argList: expr (',' expr)*;
 
+binOp:
+    '+' | '-' | '*' | '/';
+
+compareOp:
+    '==' | '!=' | '<' | '>' | '<=' | '>=' | '&&' | '||';
+
 // Expressions
 expr: 
-    expr ('+' | '-' | '*' | '/') expr
-    | expr ('==' | '!=' | '<' | '>' | '<=' | '>=') expr
-    | expr ('&&' | '||') expr
+    expr binOp expr
+    | expr compareOp expr
     | '!' expr
     | IDENTIFIER ('[' expr ']')?
     | NUMBER

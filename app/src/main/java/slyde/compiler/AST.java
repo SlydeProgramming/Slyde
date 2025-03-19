@@ -97,7 +97,11 @@ public class AST {
 
     }
 
-    public static class LiteralNode extends ASTNode{
+    public static class Expr extends ASTNode{
+        
+    }
+
+    public static class LiteralNode extends Expr{
 
     }
 
@@ -125,12 +129,26 @@ public class AST {
         }
     }
 
-    public static class BinaryOpNode extends ASTNode {
+    public static class ConditionalOp extends Expr{
         public String operator;
-        public ASTNode left;
-        public ASTNode right;
+        public Expr left;
+        public Expr right;
 
-        public BinaryOpNode(ASTNode left, String operator, ASTNode right) {
+        public ConditionalOp(Expr left, Expr right, String operator){
+            this.operator = operator;
+            this.left = left;
+            this.right = right;
+        }
+    }
+
+    
+
+    public static class BinaryOpNode extends Expr {
+        public String operator;
+        public Expr left;
+        public Expr right;
+
+        public BinaryOpNode(Expr left, String operator, Expr right) {
             this.left = left;
             this.operator = operator;
             this.right = right;
@@ -138,7 +156,7 @@ public class AST {
     }
 
     public static class IfNode extends ASTNode {
-        public ASTNode condition;
+        public ConditionalOp condition;
         public BlockNode trueBranch;
         public BlockNode falseBranch;
 
@@ -150,7 +168,7 @@ public class AST {
     }
 
     public static class WhileNode extends ASTNode {
-        public ASTNode condition;
+        public ConditionalOp condition;
         public BlockNode body;
 
         public WhileNode(ASTNode condition, BlockNode body) {
@@ -162,7 +180,7 @@ public class AST {
 
     public static class ForNode extends ASTNode {
         public VarDeclNode init;
-        public ASTNode condition;
+        public ConditionalOp condition;
         public AssignmentNode update;
         public BlockNode body;
 
