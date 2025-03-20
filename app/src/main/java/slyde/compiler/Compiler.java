@@ -1,12 +1,17 @@
 package slyde.compiler;
 
+import java.io.Console;
 import java.io.IOException;
+import java.util.logging.Logger;
 
 import org.antlr.v4.runtime.CharStream;
 import org.antlr.v4.runtime.CharStreams;
 import org.antlr.v4.runtime.CommonTokenStream;
 import org.antlr.v4.runtime.tree.ParseTree;
 
+import slyde.compiler.AST.BinaryOpNode;
+import slyde.compiler.AST.Indent;
+import slyde.compiler.AST.NumberNode;
 import slyde.compiler.AST.ProgramNode;
 import slyde.compiler.LP.SlydeLexer;
 import slyde.compiler.LP.SlydeParser;

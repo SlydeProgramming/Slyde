@@ -6,15 +6,21 @@ public class AST {
 
     public static class Indent{
         int lvl = -3;
+        String indentType = "  ";
 
         public Indent(){
             lvl = 0;
         }
 
+        public Indent(String indentType){
+            lvl = 0;
+            this.indentType = indentType;
+        }
+
         public String get(){
             String str = "";
             for (int i = 0; i < lvl; i++){
-                str += "  ";
+                str += indentType;
             }
             return str;
         }
@@ -77,8 +83,11 @@ public class AST {
             String str = lvl.get() + "Class:\n";
             str += lvl.up() + "Name: " + name + "\n" + lvl.get() + "Body:\n";
             for (ASTNode n : body){
+                lvl.up();
                 str += n.toString(lvl) + "\n";
+                lvl.down();
             }
+            lvl.down();
             return str;
         }
     }
@@ -93,6 +102,7 @@ public class AST {
         public String toString(Indent lvl) {
             String str = lvl.get() + "Return:\n";
             str += lvl.up() + "Value:\n" + expr.toString(lvl);
+            lvl.down();
             return str;
         }
     }
@@ -116,13 +126,15 @@ public class AST {
             String v;
 
             if (value == null){
-                v = "null";
+                lvl.up();
+                str += lvl.get() + "null";
+                lvl.down();
             } else {
+                lvl.up();
                 v = value.toString(lvl);
+                str += v;
+                lvl.down();
             }
-            lvl.up();
-            str += lvl.get() + v;
-            lvl.down();
             lvl.down(); 
             return str;
         }
@@ -141,7 +153,8 @@ public class AST {
         public String toString(Indent lvl) {
             String str = lvl.get() + "Assign:\n";
             str += lvl.up() + "Name: " + name + "\n" + lvl.get() + "Value:\n";
-            str += lvl.up() + value.toString(lvl);
+            lvl.up();
+            str += value.toString(lvl);
             lvl.down();
             lvl.down();
             return str;
@@ -160,13 +173,18 @@ public class AST {
 
         @Override
         public String toString(Indent lvl) {
-            String str = "Constructor:\n";
-            str += indent + "Parameters:\n";
+            String str = lvl.get() + "Constructor:\n";
+            str += lvl.up() + "Parameters:\n";
             for (VarDeclNode param : params) {
-                str += param.toString(indent + "  ") + "\n";
+                lvl.up();
+                str += param.toString(lvl) + "\n";
+                lvl.down();
             }
-            str += indent + "Body:\n";
-            str += body.toString(indent + "  ");
+            str += lvl.get() + "Body:\n";
+            lvl.up();
+            str += body.toString(lvl);
+            lvl.down();
+            lvl.down();
             return str;
         }
     }
@@ -187,15 +205,20 @@ public class AST {
 
         @Override
         public String toString(Indent lvl) {
-            String str = "Method:\n";
-            str += indent + "Return Type: " + returnType + "\n";
-            str += indent + "Name: " + name + "\n";
-            str += indent + "Parameters:\n";
+            String str = lvl.get() + "Method:\n";
+            str += lvl.up() + "Return Type: " + returnType + "\n";
+            str += lvl.get() + "Name: " + name + "\n";
+            str += lvl.get() + "Parameters:\n";
             for (VarDeclNode param : params) {
-                str += param.toString(indent + "  ") + "\n";
+                lvl.up();
+                str += param.toString(lvl) + "\n";
+                lvl.down();
             }
-            str += indent + "Body:\n";
-            str += body.toString(indent + "  ");
+            str += lvl.get() + "Body:\n";
+            lvl.up();
+            str += body.toString(lvl);
+            lvl.down();
+            lvl.down();
             return str;
         }
     }
@@ -209,9 +232,11 @@ public class AST {
 
         @Override
         public String toString(Indent lvl) {
-            String str = "Block:\n";
+            String str = lvl.get() + "Block:\n";
             for (ASTNode stmt : statements) {
-                str += indent + stmt.toString(indent + "  ") + "\n";
+                lvl.up();
+                str += stmt.toString(lvl) + "\n";
+                lvl.down();
             }
             return str;
         }
@@ -235,7 +260,7 @@ public class AST {
 
         @Override
         public String toString(Indent lvl) {
-            return indent + "String: " + value;
+            return lvl.get() + "String: " + value;
         }
     }
 
@@ -248,7 +273,7 @@ public class AST {
 
         @Override
         public String toString(Indent lvl) {
-            return indent + "Boolean: " + value;
+            return lvl.get() + "Boolean: " + value;
         }
     }
 
@@ -261,7 +286,7 @@ public class AST {
 
         @Override
         public String toString(Indent lvl) {
-            return "Number: " + value;
+            return lvl.get() + "Number: " + value;
         }
     }
 
@@ -278,7 +303,15 @@ public class AST {
 
         @Override
         public String toString(Indent lvl) {
-            return "ConditionalOp:\n " + left.toString(indent + "  ") + " " + operator + " " + right.toString(indent + "  ");
+            String str = "";
+
+            str += lvl.get() + "ConditionalOp:\n"; 
+            lvl.up();
+            str += left.toString(lvl) + "\n";
+            str += lvl.get() + "Operator: " + operator + "\n";
+            str += right.toString(lvl);
+            lvl.down();
+            return str;
         }
     }
 
@@ -297,7 +330,15 @@ public class AST {
 
         @Override
         public String toString(Indent lvl) {
-            return "BinaryOp: " + "\n" + indent + left.toString(indent + "  ") + " " + operator + " " + "\n" + indent + right.toString(indent + "  ");
+            String str = "";
+
+            str += lvl.get() + "BinaryOp:\n"; 
+            lvl.up();
+            str += left.toString(lvl) + "\n";
+            str += lvl.get() + "Operator: " + operator + "\n";
+            str += right.toString(lvl);
+            lvl.down();
+            return str;
         }
     }
 
@@ -314,11 +355,20 @@ public class AST {
 
         @Override
         public String toString(Indent lvl) {
-            String str = "IfNode:\n";
-            str += indent + "Condition:\n" + condition.toString(indent + "  ") + "\n";
-            str += indent + "True Branch:\n" + trueBranch.toString(indent + "  ") + "\n";
+            String str = lvl.get() + "IfNode:\n";
+            str += lvl.up() + "Condition:\n";
+            lvl.up();
+            str += condition.toString(lvl) + "\n";
+            lvl.down();
+            str += lvl.get() + "True Branch:\n"; 
+            lvl.up();
+            str += trueBranch.toString(lvl) + "\n";
+            lvl.down();
             if (falseBranch != null) {
-                str += indent + "False Branch:\n" + falseBranch.toString(indent + "  ") + "\n";
+                str += lvl.get() + "False Branch:\n";
+                lvl.up();
+                str += falseBranch.toString(lvl) + "\n";
+                lvl.down();
             }
             return str;
         }
@@ -335,9 +385,18 @@ public class AST {
 
         @Override
         public String toString(Indent lvl) {
-            return indent + "WhileNode:\n" +
-                   indent + "Condition:\n" + condition.toString(indent + "  ") + "\n" +
-                   indent + "Body:\n" + body.toString(indent + "  ");
+            String str = "";
+
+            str += lvl.get() + "WhileNode:\n" + lvl.up() + "Condition:\n"; 
+            lvl.up();
+            str += condition.toString(lvl) + "\n";
+            lvl.down();
+            str += lvl.get() + "Body:\n";
+            lvl.up(); 
+            str += body.toString(lvl);
+            lvl.down();
+            lvl.down();
+            return str;
         }
     }
 
@@ -357,11 +416,26 @@ public class AST {
 
         @Override
         public String toString(Indent lvl) {
-            return indent + "ForNode:\n" +
-                   indent + "Init:\n" + init.toString(indent + "  ") + "\n" +
-                   indent + "Condition:\n" + condition.toString(indent + "  ") + "\n" +
-                   indent + "Update:\n" + update.toString(indent + "  ") + "\n" +
-                   indent + "Body:\n" + body.toString(indent + "  ");
+            String str = "";
+
+            str += lvl.get() + "ForNode:\n" + lvl.up() + "Init:\n";
+            lvl.up(); 
+            str += init.toString(lvl) + "\n";
+            lvl.down();
+            str += lvl.get() + "Condition:\n"; 
+            lvl.up();
+            str += condition.toString(lvl) + "\n";
+            lvl.down();
+            str += lvl.get() + "Update:\n"; 
+            lvl.up();
+            str += update.toString(lvl) + "\n";
+            lvl.down();
+            str += lvl.get() + "Body:\n"; 
+            lvl.up();
+            str += body.toString(lvl) + "\n";
+            lvl.down();
+            lvl.down();
+            return str;
         }
     }
 
@@ -377,11 +451,14 @@ public class AST {
 
         @Override
         public String toString(Indent lvl) {
-            String str = indent + "MethodCall: " + methodName + "\n";
-            str += indent + "Arguments:\n";
+            String str = lvl.get() + "MethodCall:\n" + lvl.up() + "Name: " + methodName + "\n";
+            str += lvl.get() + "Arguments:\n";
             for (ASTNode arg : arguments) {
-                str += arg.toString(indent + "  ") + "\n";
+                lvl.up();
+                str += arg.toString(lvl) + "\n";
+                lvl.down();
             }
+            lvl.down();
             return str;
         }
 
@@ -396,7 +473,12 @@ public class AST {
 
         @Override
         public String toString(Indent lvl) {
-            return indent + "Print:\n" + value.toString(indent + "  ");
+            String str = lvl.get() + "Print:\n" + lvl.up() + "Value:\n"; 
+            lvl.up();
+            str += value.toString(lvl);
+            lvl.down();
+            lvl.down();
+            return str;
         }
 
     }

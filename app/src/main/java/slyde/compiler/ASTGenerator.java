@@ -11,6 +11,7 @@ import slyde.compiler.AST.ClassNode;
 import slyde.compiler.AST.ConditionalOp;
 import slyde.compiler.AST.ConstructorNode;
 import slyde.compiler.AST.Expr;
+import slyde.compiler.AST.Indent;
 import slyde.compiler.AST.MethodCallNode;
 import slyde.compiler.AST.NumberNode;
 import slyde.compiler.AST.StringNode;
@@ -191,7 +192,11 @@ public class ASTGenerator {
     }
 
     public static void printProg(ProgramNode node){
-        System.out.println(node.toString("\t"));
+        System.out.println(node.toString(new Indent()));
+    }
+
+    public static void printProg(ProgramNode node, String IndentType){
+        System.out.println(node.toString(new Indent(IndentType)));
     }
 
 }
