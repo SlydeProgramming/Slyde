@@ -24,13 +24,13 @@ public class Compiler {
 
             ProgramNode prog = ASTGenerator.generateAST(tree);
 
+            ASTGenerator.printProg(prog);
 
+            // LLVMGenerator generator =  new LLVMGenerator();
 
-            LLVMGenerator generator =  new LLVMGenerator();
+            // generator.generateLLVM(prog);
 
-            generator.generateLLVM(prog);
-
-            generator.dump(outPath);
+            // generator.dump(outPath);
 
 
 

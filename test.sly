@@ -1,6 +1,6 @@
 class Test {
     int hello = 0;
-    int hi = 2;
+    int hi = 2 + 2;
 
     constructor(int y){
 

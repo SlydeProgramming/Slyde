@@ -190,4 +190,8 @@ public class ASTGenerator {
         
     }
 
+    public static void printProg(ProgramNode node){
+        System.out.println(node.toString("\t"));
+    }
+
 }
