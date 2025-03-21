@@ -36,7 +36,7 @@ public class LLVMGenerator {
             } else if (node instanceof AST.ConstructorNode) {
                 generateConstructor((AST.ConstructorNode) node);
             } else if (node instanceof AST.VarDeclNode){
-                generateVarDecl((AST.VarDeclNode) node);
+                generateFeildDecl((AST.VarDeclNode) node);
             }  else if (node instanceof AST.MainNode) {
                 generateMain((AST.MainNode) node);
             }
@@ -56,6 +56,9 @@ public class LLVMGenerator {
         }
         llvmCode.append(") {\n");
         generateBlock(mainNode.body);
+
+        llvmCode.append("  ret void\n");
+        
         llvmCode.append("}\n");
     }
 
@@ -71,6 +74,9 @@ public class LLVMGenerator {
         }
         llvmCode.append(") {\n");
         generateBlock(method.body);
+        if(returnType == "void"){
+            llvmCode.append("  ret void\n");
+        }
         llvmCode.append("}\n");
     }
 
@@ -86,6 +92,9 @@ public class LLVMGenerator {
         }
         llvmCode.append(") {\n");
         generateBlock(constructor.body);
+
+        llvmCode.append("  ret void\n");
+        
         llvmCode.append("}\n");
     }
 
@@ -107,7 +116,16 @@ public class LLVMGenerator {
 
     private void generateVarDecl(AST.VarDeclNode varDecl) {
         String llvmType = getLLVMType(varDecl.type);
-        llvmCode.append("  %" + varDecl.name + " = alloca " + llvmType + "\n");
+        llvmCode.append("  %" + varDecl.name + " = alloca " + llvmType + ", align 1\n");
+        if (varDecl.value != null) {
+            String value = generateExpression(varDecl.value);
+            llvmCode.append("  store " + llvmType + " " + value + ", " + llvmType + "* %" + varDecl.name + "\n");
+        }
+    }
+
+    private void generateFeildDecl(AST.VarDeclNode varDecl) {
+        String llvmType = getLLVMType(varDecl.type);
+        llvmCode.append("  %" + varDecl.name + " = type " + llvmType + "\n");
         if (varDecl.value != null) {
             String value = generateExpression(varDecl.value);
             llvmCode.append("  store " + llvmType + " " + value + ", " + llvmType + "* %" + varDecl.name + "\n");
