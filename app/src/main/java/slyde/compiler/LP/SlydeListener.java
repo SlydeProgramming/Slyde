@@ -1,5 +1,5 @@
 package slyde.compiler.LP;
-// Generated from app/src/main/java/slyde/compiler/Slyde.g4 by ANTLR 4.13.2
+// Generated from ./app/src/main/java/slyde/compiler/LP/Slyde.g4 by ANTLR 4.13.2
 import org.antlr.v4.runtime.tree.ParseTreeListener;
 
 /**
@@ -77,6 +77,16 @@ public interface SlydeListener extends ParseTreeListener {
 	 * @param ctx the parse tree
 	 */
 	void exitConstructor(SlydeParser.ConstructorContext ctx);
+	/**
+	 * Enter a parse tree produced by {@link SlydeParser#main}.
+	 * @param ctx the parse tree
+	 */
+	void enterMain(SlydeParser.MainContext ctx);
+	/**
+	 * Exit a parse tree produced by {@link SlydeParser#main}.
+	 * @param ctx the parse tree
+	 */
+	void exitMain(SlydeParser.MainContext ctx);
 	/**
 	 * Enter a parse tree produced by {@link SlydeParser#statement}.
 	 * @param ctx the parse tree

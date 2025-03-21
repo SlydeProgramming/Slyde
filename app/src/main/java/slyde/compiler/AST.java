@@ -189,6 +189,35 @@ public class AST {
         }
     }
 
+    public static class MainNode extends ASTNode{
+        public List<VarDeclNode> params;
+        public BlockNode body;
+
+        public MainNode(List<VarDeclNode> params, BlockNode body){
+            this.params = params;
+            this.body = body;
+        }
+
+        @Override
+        public String toString(Indent lvl) {
+            String str = lvl.get() + "Main:\n";
+            str += lvl.up() + "Parameters:\n";
+            if (params != null){
+                for (VarDeclNode param : params) {
+                    lvl.up();
+                    str += param.toString(lvl) + "\n";
+                    lvl.down();
+                }
+            }
+            str += lvl.get() + "Body:\n";
+            lvl.up();
+            str += body.toString(lvl);
+            lvl.down();
+            lvl.down();
+            return str;
+        }
+    }
+
 
     public static class MethodNode extends ASTNode {
         public String returnType;

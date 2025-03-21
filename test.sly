@@ -6,6 +6,10 @@ class Test {
 
     }
 
+    Main(){
+        int temp = 2 + 2;
+    }
+
 }
 
 class test2 {

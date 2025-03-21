@@ -12,6 +12,7 @@ import slyde.compiler.AST.ConditionalOp;
 import slyde.compiler.AST.ConstructorNode;
 import slyde.compiler.AST.Expr;
 import slyde.compiler.AST.Indent;
+import slyde.compiler.AST.MainNode;
 import slyde.compiler.AST.MethodCallNode;
 import slyde.compiler.AST.NumberNode;
 import slyde.compiler.AST.StringNode;
@@ -23,8 +24,10 @@ import slyde.compiler.LP.SlydeParser.ClassBodyContext;
 import slyde.compiler.LP.SlydeParser.ClassDeclarationContext;
 import slyde.compiler.LP.SlydeParser.ConstructorContext;
 import slyde.compiler.LP.SlydeParser.ExprContext;
+import slyde.compiler.LP.SlydeParser.MainContext;
 import slyde.compiler.LP.SlydeParser.MethodCallContext;
 import slyde.compiler.LP.SlydeParser.ParamListContext;
+import slyde.compiler.LP.SlydeParser.StatementContext;
 import slyde.compiler.LP.SlydeParser.VarDeclContext;
 
 import java.util.ArrayList;
@@ -77,8 +80,23 @@ public class ASTGenerator {
             return createConstructorNode((ConstructorContext) tree);
         } else if (tree instanceof ExprContext){
             return createExprNode((ExprContext) tree);
+        } else if (tree instanceof MainContext){
+            return createMainNode((MainContext) tree);
+        } else if (tree instanceof StatementContext){
+            return createASTNode(tree.getChild(0));
         }
         return null;
+    }
+
+    public static MainNode createMainNode(MainContext ctx){
+        
+        List<VarDeclNode> params = null;
+        if (ctx.paramList() != null){
+            params = createParamsListNode(ctx.paramList());
+        }
+        BlockNode body = createBlockNode(ctx.block());
+
+        return new MainNode(params, body);
     }
 
     public static Expr createExprNode(ExprContext ctx){

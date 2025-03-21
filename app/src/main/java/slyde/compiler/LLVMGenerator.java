@@ -37,8 +37,26 @@ public class LLVMGenerator {
                 generateConstructor((AST.ConstructorNode) node);
             } else if (node instanceof AST.VarDeclNode){
                 generateVarDecl((AST.VarDeclNode) node);
+            }  else if (node instanceof AST.MainNode) {
+                generateMain((AST.MainNode) node);
             }
         }
+    }
+
+    private void generateMain(AST.MainNode mainNode) {
+        llvmCode.append("define void @main(");
+        if (mainNode.params != null){
+            for (int i = 0; i < mainNode.params.size(); i++) {
+                AST.VarDeclNode param = mainNode.params.get(i);
+                llvmCode.append(getLLVMType(param.type) + " %" + param.name);
+                if (i < mainNode.params.size() - 1) {
+                    llvmCode.append(", ");
+                }
+            }
+        }
+        llvmCode.append(") {\n");
+        generateBlock(mainNode.body);
+        llvmCode.append("}\n");
     }
 
     private void generateMethod(AST.MethodNode method) {
@@ -83,7 +101,7 @@ public class LLVMGenerator {
                 generateWhile((AST.WhileNode) stmt);
             } else if (stmt instanceof AST.ForNode) {
                 generateFor((AST.ForNode) stmt);
-            }
+            } 
         }
     }
 
