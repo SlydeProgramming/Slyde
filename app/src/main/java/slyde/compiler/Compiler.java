@@ -24,14 +24,11 @@ public class Compiler {
 
             ProgramNode prog = ASTGenerator.generateAST(tree);
 
-            ASTGenerator.printProg(prog);
+            LLVMGenerator generator =  new LLVMGenerator();
 
-            // LLVMGenerator generator =  new LLVMGenerator();
+            FileHandler.writeFile(outPath, generator.generate(prog));
 
-            // generator.generateLLVM(prog);
-
-            // generator.dump(outPath);
-
+            
 
 
 

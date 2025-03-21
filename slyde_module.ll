@@ -1,25 +1,15 @@
-; ModuleID = 'slyde_module'
-source_filename = "slyde_module"
-
-@Test = private global { i32, i32 } zeroinitializer
-@test2 = private global { i32, i32 } zeroinitializer
-
-define ptr @Test_constructor(i32 %0) {
-entry:
-  %this = alloca { i32, i32 }, align 8
-  %field0 = getelementptr { i32, i32 }, ptr %this, i32 0
-  store i32 0, ptr %field0, align 4
-  %field1 = getelementptr { i32, i32 }, ptr %this, i32 1
-  store i32 0, ptr %field1, align 4
-  ret ptr %this
+; Generated LLVM IR
+; Class: Test
+  %hello = alloca i32
+  store i32 0, i32* %hello
+  %hi = alloca i32
+  %t0 = add i32 2, 2
+  store i32 %t0, i32* %hi
+; Constructor
+define void @constructor(i32 %y) {
 }
-
-define ptr @test2_constructor() {
-entry:
-  %this = alloca { i32, i32 }, align 8
-  %field0 = getelementptr { i32, i32 }, ptr %this, i32 0
-  store i32 0, ptr %field0, align 4
-  %field1 = getelementptr { i32, i32 }, ptr %this, i32 1
-  store i32 0, ptr %field1, align 4
-  ret ptr %this
-}
+; Class: test2
+  %hi = alloca i32
+  store i32 4, i32* %hi
+  %hello = alloca i32
+  store i32 1, i32* %hello

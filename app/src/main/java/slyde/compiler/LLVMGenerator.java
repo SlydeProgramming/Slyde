@@ -1,151 +1,162 @@
 package slyde.compiler;
 
-import org.bytedeco.javacpp.Pointer;
-import org.bytedeco.javacpp.PointerPointer;
-import org.bytedeco.llvm.LLVM.*;
-
-import slyde.compiler.AST.ASTNode;
-import slyde.compiler.AST.BooleanNode;
-import slyde.compiler.AST.ClassNode;
-import slyde.compiler.AST.ConstructorNode;
-import slyde.compiler.AST.LiteralNode;
-import slyde.compiler.AST.NumberNode;
-import slyde.compiler.AST.ProgramNode;
-import slyde.compiler.AST.StringNode;
-import slyde.compiler.AST.VarDeclNode;
-
-import static org.bytedeco.llvm.global.LLVM.*;
-
-import java.io.BufferedWriter;
-import java.io.FileWriter;
-import java.io.IOException;
-import java.util.ArrayList;
-import java.util.List;
-
 
 public class LLVMGenerator {
-
-    public LLVMContextRef context;
-    public LLVMModuleRef module;
-    public LLVMBuilderRef builder;
+    private StringBuilder llvmCode;
+    private int tempVarCounter;
+    private int labelCounter;
 
     public LLVMGenerator() {
-        LLVMInitializeNativeTarget();
-        LLVMInitializeNativeAsmPrinter();
-
-        context = LLVMContextCreate();
-        module = LLVMModuleCreateWithName("slyde_module");
-        builder = LLVMCreateBuilderInContext(context);
+        llvmCode = new StringBuilder();
+        tempVarCounter = 0;
+        labelCounter = 0;
     }
 
-    public void generateLLVM(ProgramNode prog) {
-        List<ClassNode> classes = prog.classes;
-        for (int i = 0; i < classes.size(); i++) {
-            ClassNode classNode = classes.get(i);
-            List<LLVMTypeRef> fields = new ArrayList<>();
-            List<LLVMValueRef> defaultVal = new ArrayList<>();
-            List<LLVMTypeRef> constParams = new ArrayList<>();
-    
-            for (int j = 0; j < classNode.body.size(); j++) {
-                ASTNode node = classNode.body.get(j);
-    
-                if (node instanceof VarDeclNode) {
-                    VarDeclNode varNode = (VarDeclNode) node;
-                    LLVMTypeRef type = getLLVMType(varNode.type);
-                    fields.add(type);
-                    defaultVal.add(getVarValue(varNode.value));
-    
-                } else if (node instanceof ConstructorNode) {
-                    ConstructorNode constructorNode = (ConstructorNode) node;
-    
-                    for (int k = 0; k < constructorNode.params.size(); k++) {
-                        LLVMTypeRef type = getLLVMType(constructorNode.params.get(k).type);
-                        constParams.add(type);
-                    }
-                }
-            }
-    
-            LLVMTypeRef structType = LLVMStructTypeInContext(
-                context, toPointer(fields.toArray(new LLVMTypeRef[0])), fields.size(), 0);
-            LLVMTypeRef structPtrType = LLVMPointerType(structType, 0);
-    
-            LLVMValueRef globalStruct = LLVMAddGlobal(module, structType, classNode.name);
-            LLVMSetLinkage(globalStruct, LLVMPrivateLinkage);
-            LLVMValueRef structInit = LLVMConstNamedStruct(structType, 
-                toPointer(defaultVal.toArray(new LLVMValueRef[0])), defaultVal.size());
-            LLVMSetInitializer(globalStruct, structInit);
-    
-            LLVMTypeRef functionType = LLVMFunctionType(
-                structPtrType, toPointer(constParams.toArray(new LLVMTypeRef[0])), constParams.size(), 0);
-            LLVMValueRef constructor = LLVMAddFunction(module, classNode.name + "_constructor", functionType);
-    
-            LLVMBasicBlockRef entry = LLVMAppendBasicBlock(constructor, "entry");
-            LLVMBuilderRef builder = LLVMCreateBuilderInContext(context);
-            LLVMPositionBuilderAtEnd(builder, entry);
-    
-            LLVMValueRef thisPtr = LLVMBuildAlloca(builder, structType, "this");
-    
-            for (int k = 0; k < fields.size(); k++) {
-                LLVMValueRef fieldPtr = LLVMBuildGEP2(builder, structType, thisPtr, 
-        toPointer(new LLVMValueRef[]{LLVMConstInt(LLVMInt32Type(), k, 0)}), 1, "field" + k);
-                LLVMBuildStore(builder, defaultVal.get(k), fieldPtr);
-            }
-    
-            LLVMBuildRet(builder, thisPtr);
-    
-            LLVMDisposeBuilder(builder);
+    private String newTempVar() {
+        return "%t" + (tempVarCounter++);
+    }
+
+    private String newLabel() {
+        return "label" + (labelCounter++);
+    }
+
+    public String generate(AST.ProgramNode program) {
+        llvmCode.append("; Generated LLVM IR\n");
+        for (AST.ClassNode classNode : program.classes) {
+            generateClass(classNode);
         }
-    
-        // Print generated LLVM IR
-        String str = LLVMPrintModuleToString(module).getString();
-        System.out.println(str);
+        return llvmCode.toString();
     }
 
-    public String getString(){
-        return LLVMPrintModuleToString(module).getString();
-    }
-
-    public void dump(String path) throws IOException{
-        String str = LLVMPrintModuleToString(module).getString();
-        BufferedWriter bufferedWriter = new BufferedWriter(new FileWriter(path));
-        bufferedWriter.write(str);
-        bufferedWriter.close();
-    }
-
-    private static <T extends Pointer> PointerPointer<T> toPointer(T[] array){
-        return new PointerPointer<>(array);
-    }
-
-    private LLVMTypeRef getLLVMType(String slydeType) {
-        switch (slydeType) {
-            case "int":
-                return LLVMInt32Type();
-            case "float":
-                return LLVMFloatType();
-            case "String":
-                return LLVMPointerType(LLVMInt8Type(), 0);
-            case "boolean":
-                return LLVMInt1Type();
-            case "void":
-                return LLVMVoidType();
-            default:
-                return LLVMVoidType();
+    private void generateClass(AST.ClassNode classNode) {
+        llvmCode.append("; Class: " + classNode.name + "\n");
+        for (AST.ASTNode node : classNode.body) {
+            if (node instanceof AST.MethodNode) {
+                generateMethod((AST.MethodNode) node);
+            } else if (node instanceof AST.ConstructorNode) {
+                generateConstructor((AST.ConstructorNode) node);
+            } else if (node instanceof AST.VarDeclNode){
+                generateVarDecl((AST.VarDeclNode) node);
+            }
         }
     }
 
-    private LLVMValueRef getVarValue(ASTNode valueNode) {
-        if(valueNode instanceof LiteralNode){
-            if (valueNode instanceof NumberNode){
-                return LLVMConstInt(LLVMInt32Type(), ((NumberNode) valueNode).value, 1);
-            } else if (valueNode instanceof BooleanNode){
-                return LLVMConstInt(LLVMInt1Type(), ((BooleanNode) valueNode).value ? 1 : 0, 0);
-            } else if (valueNode instanceof StringNode){
-                return LLVMConstString(((StringNode) valueNode).value, ((StringNode) valueNode).value.length(), 1);
+    private void generateMethod(AST.MethodNode method) {
+        String returnType = getLLVMType(method.returnType);
+        llvmCode.append("define " + returnType + " @" + method.name + "(");
+        for (int i = 0; i < method.params.size(); i++) {
+            AST.VarDeclNode param = method.params.get(i);
+            llvmCode.append(getLLVMType(param.type) + " %" + param.name);
+            if (i < method.params.size() - 1) {
+                llvmCode.append(", ");
             }
-            
         }
-        return LLVMConstNull(LLVMInt32Type());
+        llvmCode.append(") {\n");
+        generateBlock(method.body);
+        llvmCode.append("}\n");
     }
 
+    private void generateConstructor(AST.ConstructorNode constructor) {
+        llvmCode.append("; Constructor\n");
+        llvmCode.append("define void @constructor(");
+        for (int i = 0; i < constructor.params.size(); i++) {
+            AST.VarDeclNode param = constructor.params.get(i);
+            llvmCode.append(getLLVMType(param.type) + " %" + param.name);
+            if (i < constructor.params.size() - 1) {
+                llvmCode.append(", ");
+            }
+        }
+        llvmCode.append(") {\n");
+        generateBlock(constructor.body);
+        llvmCode.append("}\n");
+    }
 
+    private void generateBlock(AST.BlockNode block) {
+        for (AST.ASTNode stmt : block.statements) {
+            if (stmt instanceof AST.VarDeclNode) {
+                generateVarDecl((AST.VarDeclNode) stmt);
+            } else if (stmt instanceof AST.ReturnNode) {
+                generateReturn((AST.ReturnNode) stmt);
+            } else if (stmt instanceof AST.IfNode) {
+                generateIf((AST.IfNode) stmt);
+            } else if (stmt instanceof AST.WhileNode) {
+                generateWhile((AST.WhileNode) stmt);
+            } else if (stmt instanceof AST.ForNode) {
+                generateFor((AST.ForNode) stmt);
+            }
+        }
+    }
+
+    private void generateVarDecl(AST.VarDeclNode varDecl) {
+        String llvmType = getLLVMType(varDecl.type);
+        llvmCode.append("  %" + varDecl.name + " = alloca " + llvmType + "\n");
+        if (varDecl.value != null) {
+            String value = generateExpression(varDecl.value);
+            llvmCode.append("  store " + llvmType + " " + value + ", " + llvmType + "* %" + varDecl.name + "\n");
+        }
+    }
+
+    private void generateReturn(AST.ReturnNode returnNode) {
+        String returnValue = generateExpression(returnNode.expr);
+        llvmCode.append("  ret i32 " + returnValue + "\n");
+    }
+
+    private void generateIf(AST.IfNode ifNode) {
+        String condition = generateExpression(ifNode.condition);
+        String trueLabel = newLabel();
+        String falseLabel = newLabel();
+        llvmCode.append("  br i1 " + condition + ", label %" + trueLabel + ", label %" + falseLabel + "\n");
+        llvmCode.append(trueLabel + ":\n");
+        generateBlock(ifNode.trueBranch);
+        llvmCode.append(falseLabel + ":\n");
+        if (ifNode.falseBranch != null) {
+            generateBlock(ifNode.falseBranch);
+        }
+    }
+
+    private void generateWhile(AST.WhileNode whileNode) {
+        String conditionLabel = newLabel();
+        String bodyLabel = newLabel();
+        String endLabel = newLabel();
+        llvmCode.append(conditionLabel + ":\n");
+        String condition = generateExpression(whileNode.condition);
+        llvmCode.append("  br i1 " + condition + ", label %" + bodyLabel + ", label %" + endLabel + "\n");
+        llvmCode.append(bodyLabel + ":\n");
+        generateBlock(whileNode.body);
+        llvmCode.append("  br label %" + conditionLabel + "\n");
+        llvmCode.append(endLabel + ":\n");
+    }
+
+    private void generateFor(AST.ForNode forNode) {
+        generateVarDecl(forNode.init);
+        generateWhile(new AST.WhileNode(forNode.condition, forNode.body));
+        generateExpression(forNode.update);
+    }
+
+    private String generateExpression(AST.ASTNode expr) {
+        if (expr instanceof AST.NumberNode) {
+            return Integer.toString(((AST.NumberNode) expr).value);
+        } else if (expr instanceof AST.BinaryOpNode) {
+            return generateBinaryOp((AST.BinaryOpNode) expr);
+        }
+        return "0";
+    }
+
+    private String generateBinaryOp(AST.BinaryOpNode binOp) {
+        String left = generateExpression(binOp.left);
+        String right = generateExpression(binOp.right);
+        String temp = newTempVar();
+        String op = binOp.operator.equals("+") ? "add" : "sub";
+        llvmCode.append("  " + temp + " = " + op + " i32 " + left + ", " + right + "\n");
+        return temp;
+    }
+
+    private String getLLVMType(String type) {
+        return switch (type) {
+            case "int" -> "i32";
+            case "boolean" -> "i1";
+            case "void" -> "void";
+            default -> "i32";
+        };
+    }
 }
