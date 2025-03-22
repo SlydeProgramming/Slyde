@@ -7,6 +7,8 @@ This requires java version 21
 Download Link:
 https://www.oracle.com/java/technologies/downloads/#java21
 
+Also install the Slyde Language extention on vs code!
+
 once you have java downloaded you can run
 
 
@@ -62,10 +64,10 @@ Main Method for startup ONLY ONE PER FILE:
 ```
 class Foo{
   int hello = 0;
+}
 
-  Main(){
-    //body
-  }
+main(){
+   //body
 }
 ```
 
