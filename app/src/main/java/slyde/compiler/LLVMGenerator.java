@@ -339,6 +339,17 @@ public class LLVMGenerator {
         String right = generateExpression(binOp.right);
         String temp = newTempVar();
         String op = binOp.operator.equals("+") ? "add" : "sub";
+
+        switch (binOp.operator) {
+            case "*":
+                op = "mul";
+                break;
+        
+            case "/":
+                op = "sdiv";
+            default:
+                break;
+        }
         llvmCode.append(indent.get() + temp + " = " + op + " i32 " + left + ", " + right + "\n");
         return temp;
     }

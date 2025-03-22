@@ -8,7 +8,6 @@ class Test {
             hi = 3;
 
         }
-
     } 
 }
 
@@ -19,9 +18,10 @@ main(){
         temp = 3;
     }
 
+
 }
 
-class test2 {
+class Test2 {
     int hi = 4;
     int hello = 1;
 }

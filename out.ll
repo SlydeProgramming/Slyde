@@ -19,13 +19,13 @@ define void @Test_constructor(%Test* %this, i32 %y) nounwind {
 	label2:
 	ret void
 }
-; Class: test2
-%test2= type {i32, i32}
+; Class: Test2
+%Test2= type {i32, i32}
 
-define void @test2_constructor(%test2* %this) nounwind {
-	%hi = getelementptr %test2, %test2* %this, i32 0, i32 0
+define void @Test2_constructor(%Test2* %this) nounwind {
+	%hi = getelementptr %Test2, %Test2* %this, i32 0, i32 0
 	store i32 4, i32* %hi
-	%hello = getelementptr %test2, %test2* %this, i32 0, i32 1
+	%hello = getelementptr %Test2, %Test2* %this, i32 0, i32 1
 	store i32 1, i32* %hello
 	ret void
 }
