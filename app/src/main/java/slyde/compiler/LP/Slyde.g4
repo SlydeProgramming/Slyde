@@ -1,14 +1,14 @@
 grammar Slyde;
 
 prog: 
-    classDeclaration* EOF;
+    (classDeclaration | MAIN '(' paramList? ')' block)* EOF;
 
 // Class Definition
 classDeclaration: 
     CLASS IDENTIFIER ('extends' IDENTIFIER)? '{' classBody '}';
 
 classBody: 
-    (varDecl | methodDeclaration | constructor | main)*;
+    (varDecl | methodDeclaration | constructor)*;
 
 // Methods (Function Overloading Supported)
 methodDeclaration: 
@@ -24,8 +24,7 @@ block: '{' statement* '}';
 constructor:
     CONSTRUCT '(' paramList? ')' block;
 
-main:
-    MAIN '(' paramList? ')' block;
+
 
 statement: 
     varDecl 
@@ -72,6 +71,7 @@ expr:
     | BOOLEAN
     | methodCall
     | '(' expr ')'
+    | IDENTIFIER
     ;
 
 // Control Flow
@@ -95,7 +95,7 @@ inputStmt: INPUT '(' STRING ')' ';';
 
 // Types
 type: 
-    'int' | 'float' | 'String' | 'boolean' | 'void';
+    'int' | 'float' | 'String' | 'boolean' | 'void' | IDENTIFIER;
 
 // Arrays
 arrayDeclaration: 
@@ -105,6 +105,11 @@ arrayLiteral:
     '[' (expr (',' expr)*)? ']';
 
 
+SLC:
+    '//' .*? '\n' -> skip;
+
+MLC:
+    '/*' .*? '*/' -> skip;
 
 
 CLASS: 'class';
@@ -117,7 +122,7 @@ RETURN: 'return';
 PRINT: 'print';
 INPUT: 'input';
 CONSTRUCT: 'constructor';
-MAIN: 'Main';
+MAIN: 'main';
 
 // Tokens
 IDENTIFIER: [a-zA-Z_][a-zA-Z_0-9]*;

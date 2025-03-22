@@ -3,16 +3,20 @@ class Test {
     int hi = 2 + 2;
 
     constructor(int y){
+        
+        if (hi == 4) {
+            hi = 3;
 
-    }
-
-    Main(){
-        int temp = 2 + 2;
-
-        if(yes){
-            temp = 3;
         }
 
+    } 
+}
+
+main(){
+    int temp = 2 + 2;
+
+    if(yes){
+        temp = 3;
     }
 
 }

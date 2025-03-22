@@ -3,11 +3,11 @@ package slyde.compiler;
 import org.antlr.v4.runtime.CharStream;
 import org.antlr.v4.runtime.CharStreams;
 import org.antlr.v4.runtime.CommonTokenStream;
-import org.antlr.v4.runtime.tree.ParseTree;
 
 import slyde.compiler.AST.ProgramNode;
 import slyde.compiler.LP.SlydeLexer;
 import slyde.compiler.LP.SlydeParser;
+import slyde.compiler.LP.SlydeParser.ProgContext;
 
 public class Compiler {
 
@@ -18,7 +18,7 @@ public class Compiler {
             SlydeLexer lexer = new SlydeLexer(input);
             CommonTokenStream tokens = new CommonTokenStream(lexer);
             SlydeParser parser = new SlydeParser(tokens);
-            ParseTree tree = parser.prog();
+            ProgContext tree = parser.prog();
 
             ProgramNode prog = ASTGenerator.generateAST(tree);
 
@@ -42,7 +42,7 @@ public class Compiler {
             SlydeLexer lexer = new SlydeLexer(input);
             CommonTokenStream tokens = new CommonTokenStream(lexer);
             SlydeParser parser = new SlydeParser(tokens);
-            ParseTree tree = parser.prog();
+            ProgContext tree = parser.prog();
 
             ProgramNode prog = ASTGenerator.generateAST(tree);
 

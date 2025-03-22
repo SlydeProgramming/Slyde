@@ -78,16 +78,6 @@ public interface SlydeListener extends ParseTreeListener {
 	 */
 	void exitConstructor(SlydeParser.ConstructorContext ctx);
 	/**
-	 * Enter a parse tree produced by {@link SlydeParser#main}.
-	 * @param ctx the parse tree
-	 */
-	void enterMain(SlydeParser.MainContext ctx);
-	/**
-	 * Exit a parse tree produced by {@link SlydeParser#main}.
-	 * @param ctx the parse tree
-	 */
-	void exitMain(SlydeParser.MainContext ctx);
-	/**
 	 * Enter a parse tree produced by {@link SlydeParser#statement}.
 	 * @param ctx the parse tree
 	 */
