@@ -14,7 +14,7 @@ public class App {
 
 
             Path filePath1 = Paths.get(args[0]).toAbsolutePath();
-            Path filePath2 = Paths.get("out").toAbsolutePath();
+            Path filePath2 = Paths.get("out.ll").toAbsolutePath();
             if (args.length > 1){
                 filePath2 = Paths.get(args[1]).toAbsolutePath();
             }
