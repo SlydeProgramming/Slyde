@@ -43,9 +43,11 @@ public class AST {
 
     public static class ProgramNode extends ASTNode {
         public List<ClassNode> classes;
+        public MainNode main;
 
-        public ProgramNode(List<ClassNode> classes) {
+        public ProgramNode(List<ClassNode> classes, MainNode main) {
             this.classes = classes;
+            this.main = main;
         }
 
         @Override
@@ -83,15 +85,6 @@ public class AST {
             for (ASTNode n : body){
                 if (n instanceof ConstructorNode){
                     return (ConstructorNode) n;
-                }
-            }
-            return null;
-        }
-
-        public MainNode getMain(){
-            for (ASTNode n : body){
-                if (n instanceof MainNode){
-                    return (MainNode) n;
                 }
             }
             return null;
@@ -350,6 +343,24 @@ public class AST {
         public String toString(Indent lvl) {
             return lvl.get() + "Boolean: " + value;
         }
+    }
+
+    public static class IdentifierNode extends Expr{
+        public String name;
+        public String type;
+
+        public IdentifierNode(String name, String type){
+            this.name = name;
+            this.type = type;
+        }
+
+        @Override
+        public String toString(Indent lvl) {
+            return lvl.get() + "Identifier: " + name;
+        }
+
+        
+
     }
 
     public static class NumberNode extends LiteralNode {

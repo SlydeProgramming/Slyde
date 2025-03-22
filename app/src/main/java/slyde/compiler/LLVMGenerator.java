@@ -33,6 +33,12 @@ public class LLVMGenerator {
         for (ClassNode classNode : program.classes) {
             generateClass(classNode);
         }
+
+        MainNode m = program.main;
+        if (m != null){
+            generateMain(m);
+        }
+
         return llvmCode.toString();
     }
 
@@ -136,13 +142,6 @@ public class LLVMGenerator {
 
         //Finish making methods
         
-
-
-        
-        MainNode m = classNode.getMain();
-        if (m != null){
-            generateMain(m);
-        }
 
 
         
@@ -268,8 +267,10 @@ public class LLVMGenerator {
             } else {
                 return "0";
             }
+        } else if (expr instanceof IdentifierNode){
+            return "%" + ((IdentifierNode) expr).name;
         }
-        return "0";
+        return null;
     }
 
 
@@ -286,12 +287,51 @@ public class LLVMGenerator {
             } else {
                 return new String[] {"0", getLLVMType("boolean")};
             }
+        } else if (expr instanceof IdentifierNode){
+            String temp = newTempVar();
+            llvmCode.append(indent.get() + temp + " = load " + getLLVMType(((IdentifierNode) expr).type) + ", " + getLLVMType(((IdentifierNode) expr).type) + "* %" + ((IdentifierNode) expr).name  + "\n");
+            return new String[] {temp, getLLVMType(((IdentifierNode) expr).type)};
         }
         return new String[] {null, null};
     }
 
     private String generateCondOp(ConditionalOp conditionalOp){
-        throw new UnsupportedOperationException("DO STUFF");
+        String[] left = generateExpression(conditionalOp.left, true);
+        String right = generateExpression(conditionalOp.right);
+        String temp = newTempVar();
+        String op = null;
+
+        switch (conditionalOp.operator) {
+            case "==":
+                op = "eq";
+                break;
+            case "!=":
+                op = "ne";
+                break;
+            case "<":
+                op = "lt";
+                break;
+            case "<=":
+                op = "le";
+                break;
+            case ">":
+                op = "gt";
+                break;
+            case ">=":
+                op = "ge";
+                break;
+            default:
+                break;
+        }
+
+        if(op == null){
+            System.err.println("Error: Invalid operation: " + conditionalOp.operator);
+        }
+
+        llvmCode.append(indent.get() + temp + " = " + "icmp " + op + " " + left[1] + " " + left[0] + ", " + right + "\n");
+
+
+        return temp;
     }
 
     private String generateBinaryOp(BinaryOpNode binOp) {
