@@ -10,10 +10,18 @@ import slyde.compiler.Compiler;
 
 public class App {
     public static void main(String[] args) {
-        if(args.length > 1){
+        if(args.length > 0){
+
+
             Path filePath1 = Paths.get(args[0]).toAbsolutePath();
-            Path filePath2 = Paths.get(args[1]).toAbsolutePath();
+            Path filePath2 = Paths.get("out").toAbsolutePath();
+            if (args.length > 1){
+                filePath2 = Paths.get(args[1]).toAbsolutePath();
+            }
+            
             Compiler.compile(filePath1.toString(), filePath2.toString());
+        } else {
+            System.err.println("Error: No File path provided");
         }
     }
 }
