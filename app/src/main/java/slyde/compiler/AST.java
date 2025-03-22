@@ -1,5 +1,6 @@
 package slyde.compiler;
 
+import java.util.ArrayList;
 import java.util.List;
 
 public class AST {
@@ -78,6 +79,47 @@ public class AST {
             this.body = body;
         }
 
+        public ConstructorNode getConstructor(){
+            for (ASTNode n : body){
+                if (n instanceof ConstructorNode){
+                    return (ConstructorNode) n;
+                }
+            }
+            return null;
+        }
+
+        public MainNode getMain(){
+            for (ASTNode n : body){
+                if (n instanceof MainNode){
+                    return (MainNode) n;
+                }
+            }
+            return null;
+        }
+
+        public List<MethodNode> getMethods(){
+            List<MethodNode> nodes = new ArrayList<>();
+            for (ASTNode n : body){
+                if (n instanceof MethodNode){
+                    nodes.add((MethodNode) n);
+                }
+            }
+            return nodes;
+        }
+
+        public List<VarDeclNode> getFields(){
+            List<VarDeclNode> nodes = new ArrayList<>();
+            for (ASTNode n : body){
+                if (n instanceof VarDeclNode){
+                    nodes.add((VarDeclNode) n);
+                }
+            }
+            if (nodes.isEmpty()){
+                return null;
+            }
+            return nodes;
+        }
+
         @Override
         public String toString(Indent lvl) {
             String str = lvl.get() + "Class:\n";
@@ -93,9 +135,11 @@ public class AST {
     }
     public static class ReturnNode extends ASTNode {
         public ASTNode expr;
+        public String type;
 
-        public ReturnNode(ASTNode expr) {
+        public ReturnNode(ASTNode expr, String type) {
             this.expr = expr;
+            this.type = type;
         }
 
         @Override

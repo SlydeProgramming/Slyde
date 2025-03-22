@@ -20,7 +20,6 @@ repositories {
 dependencies {
 
     implementation("org.antlr:antlr4-runtime:4.13.2")
-    implementation("org.bytedeco:llvm-platform:19.1.3-1.5.11")
 
 
     // This dependency is used by the application.
