@@ -106,8 +106,7 @@ arrayLiteral:
 
 
 
-TRUE: 'true' | 'yes' | 'on';
-FALSE: 'false' | 'no' | 'off';
+
 CLASS: 'class';
 EXTENDS: 'extends';
 IF: 'if';
@@ -124,7 +123,7 @@ MAIN: 'Main';
 IDENTIFIER: [a-zA-Z_][a-zA-Z_0-9]*;
 NUMBER: [0-9]+;
 STRING: '"' .*? '"';
-BOOLEAN: TRUE | FALSE;
+BOOLEAN: 'true' | 'yes' | 'on' | 'false' | 'no' | 'off';
 
 // Whitespace
 WS: [ \t\r\n]+ -> skip;

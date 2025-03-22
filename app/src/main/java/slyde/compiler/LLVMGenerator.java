@@ -1,6 +1,5 @@
 package slyde.compiler;
 
-import java.util.ArrayList;
 import java.util.List;
 
 public class LLVMGenerator {
@@ -160,41 +159,7 @@ public class LLVMGenerator {
         llvmCode.append("}\n");
     }
 
-    private void generateMethod(AST.MethodNode method) {
-        String returnType = getLLVMType(method.returnType);
-        llvmCode.append("define " + returnType + " @" + method.name + "(");
-        for (int i = 0; i < method.params.size(); i++) {
-            AST.VarDeclNode param = method.params.get(i);
-            llvmCode.append(getLLVMType(param.type) + " %" + param.name);
-            if (i < method.params.size() - 1) {
-                llvmCode.append(", ");
-            }
-        }
-        llvmCode.append(") {\n");
-        generateBlock(method.body);
-        if(returnType == "void"){
-            llvmCode.append("\tret void\n");
-        }
-        llvmCode.append("}\n");
-    }
 
-    private void generateConstructor(AST.ConstructorNode constructor) {
-        llvmCode.append("; Constructor\n");
-        llvmCode.append("define void @constructor(");
-        for (int i = 0; i < constructor.params.size(); i++) {
-            AST.VarDeclNode param = constructor.params.get(i);
-            llvmCode.append(getLLVMType(param.type) + " %" + param.name);
-            if (i < constructor.params.size() - 1) {
-                llvmCode.append(", ");
-            }
-        }
-        llvmCode.append(") {\n");
-        generateBlock(constructor.body);
-
-        llvmCode.append("\tret void\n");
-        
-        llvmCode.append("}\n");
-    }
 
     private void generateBlock(AST.BlockNode block) {
         for (AST.ASTNode stmt : block.statements) {

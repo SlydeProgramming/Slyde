@@ -8,6 +8,11 @@ class Test {
 
     Main(){
         int temp = 2 + 2;
+
+        if(yes){
+            temp = 3;
+        }
+
     }
 
 }
