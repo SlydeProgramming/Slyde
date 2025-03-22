@@ -348,7 +348,7 @@ public class LLVMGenerator {
             case "int" -> "i32";
             case "boolean" -> "i1";
             case "void" -> "void";
-            default -> "i32";
+            default -> "%" + type;
         };
     }
 }
