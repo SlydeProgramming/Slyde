@@ -62,10 +62,10 @@ Main Method for startup ONLY ONE PER FILE:
 ```
 class Foo{
   int hello = 0;
+}
 
-  Main(){
-    //body
-  }
+main(){
+   //body
 }
 ```
 
