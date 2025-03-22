@@ -6,8 +6,9 @@
  */
 
 plugins {
-    // Apply the application plugin to add support for building a CLI application in Java.
+    kotlin("jvm") version "1.8.0"
     application
+    id("com.github.johnrengelman.shadow") version "7.0.0"
 }
 
 repositories {
@@ -18,7 +19,7 @@ repositories {
 }
 
 dependencies {
-
+    implementation(kotlin("stdlib"))
     implementation("org.antlr:antlr4-runtime:4.13.2")
 
 
@@ -35,5 +36,17 @@ java {
 
 application {
     // Define the main class for the application.
-    mainClass = "slyde.App"
+    mainClass.set("slyde.App")
+}
+
+tasks.named<JavaExec>("run") {
+    workingDir = file("C:/Users/every/Documents/Github/Slyde") // Set the working directory
+}
+
+tasks.jar {
+    manifest {
+        attributes(
+            "Main-Class" to "slyde.App"
+        )
+    }
 }

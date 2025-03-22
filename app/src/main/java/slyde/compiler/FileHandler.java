@@ -15,4 +15,12 @@ public class FileHandler {
         file.write(val);
         file.close();
     }
+
+    public static void exec(String command) throws IOException, InterruptedException{
+        ProcessBuilder processBuilder = new ProcessBuilder(command.split(" "));
+        processBuilder.inheritIO();
+        Process p = processBuilder.start();
+        p.waitFor();
+        
+    }
 }

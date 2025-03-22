@@ -3,10 +3,17 @@
  */
 package slyde;
 
+import java.nio.file.Path;
+import java.nio.file.Paths;
+
 import slyde.compiler.Compiler;
 
 public class App {
     public static void main(String[] args) {
-        Compiler.compile(null, null);
+        if(args.length > 1){
+            Path filePath1 = Paths.get(args[0]).toAbsolutePath();
+            Path filePath2 = Paths.get(args[1]).toAbsolutePath();
+            Compiler.compile(filePath1.toString(), filePath2.toString());
+        }
     }
 }
