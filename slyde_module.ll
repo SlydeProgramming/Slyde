@@ -1,5 +1,5 @@
 ; Generated LLVM IR
-; Class: Test
+declare i32 @puts(i8*); Class: Test
 %Test= type {i32, i32}
 
 define void @Test_constructor(%Test* %this, i32 %y) nounwind {
@@ -14,6 +14,13 @@ define void @main() {
 	%temp = alloca i32, align 1
 	%t1 = add i32 2, 2
 	store i32 %t1, i32* %temp
+	br i1 1, label %label0, label %label1
+	label0:
+		store i32 3, i32* %temp
+		br label %label2
+	label1:
+		br label %label2
+	label2:
 	ret void
 }
 ; Class: test2

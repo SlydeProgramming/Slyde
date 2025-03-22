@@ -26,6 +26,8 @@ public class Compiler {
 
             LLVMGenerator generator =  new LLVMGenerator();
 
+            // ASTGenerator.printProg(prog);
+
             FileHandler.writeFile(outPath, generator.generate(prog));
 
             

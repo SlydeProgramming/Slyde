@@ -4,6 +4,7 @@ import org.antlr.v4.runtime.tree.ParseTree;
 import org.antlr.v4.runtime.tree.TerminalNode;
 
 import slyde.compiler.AST.ASTNode;
+import slyde.compiler.AST.AssignmentNode;
 import slyde.compiler.AST.BinaryOpNode;
 import slyde.compiler.AST.BlockNode;
 import slyde.compiler.AST.BooleanNode;
@@ -11,6 +12,7 @@ import slyde.compiler.AST.ClassNode;
 import slyde.compiler.AST.ConditionalOp;
 import slyde.compiler.AST.ConstructorNode;
 import slyde.compiler.AST.Expr;
+import slyde.compiler.AST.IfNode;
 import slyde.compiler.AST.Indent;
 import slyde.compiler.AST.MainNode;
 import slyde.compiler.AST.MethodCallNode;
@@ -19,11 +21,13 @@ import slyde.compiler.AST.StringNode;
 import slyde.compiler.AST.ProgramNode;
 import slyde.compiler.AST.VarDeclNode;
 import slyde.compiler.LP.SlydeParser.ArgListContext;
+import slyde.compiler.LP.SlydeParser.AssignmentContext;
 import slyde.compiler.LP.SlydeParser.BlockContext;
 import slyde.compiler.LP.SlydeParser.ClassBodyContext;
 import slyde.compiler.LP.SlydeParser.ClassDeclarationContext;
 import slyde.compiler.LP.SlydeParser.ConstructorContext;
 import slyde.compiler.LP.SlydeParser.ExprContext;
+import slyde.compiler.LP.SlydeParser.IfStmtContext;
 import slyde.compiler.LP.SlydeParser.MainContext;
 import slyde.compiler.LP.SlydeParser.MethodCallContext;
 import slyde.compiler.LP.SlydeParser.ParamListContext;
@@ -84,8 +88,35 @@ public class ASTGenerator {
             return createMainNode((MainContext) tree);
         } else if (tree instanceof StatementContext){
             return createASTNode(tree.getChild(0));
+        } else if (tree instanceof IfStmtContext){
+            return createIfNode((IfStmtContext) tree);
+        } else if (tree instanceof AssignmentContext) {
+            return createAssignmentNode((AssignmentContext) tree);
+        } else {
+            System.out.println(tree.toStringTree());
         }
         return null;
+    }
+
+    public static AssignmentNode createAssignmentNode(AssignmentContext ctx){
+        String name = ctx.IDENTIFIER().getText();
+        int exprSize = ctx.expr().size();
+        ASTNode value = createASTNode(ctx.expr(exprSize - 1));
+
+        return new AssignmentNode(name, value);
+    }
+
+    public static IfNode createIfNode(IfStmtContext ctx){
+        Expr condition = createExprNode(ctx.expr());
+
+        BlockNode trueBranch = createBlockNode(ctx.block(0));
+
+        BlockNode falseBranch = null;
+        if (ctx.ELSE() != null){
+            falseBranch = createBlockNode(ctx.block(1));
+        }
+
+        return new IfNode(condition, trueBranch, falseBranch);
     }
 
     public static MainNode createMainNode(MainContext ctx){

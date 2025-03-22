@@ -307,9 +307,11 @@ public class AST {
         public String toString(Indent lvl) {
             String str = lvl.get() + "Block:\n";
             for (ASTNode stmt : statements) {
-                lvl.up();
-                str += stmt.toString(lvl) + "\n";
-                lvl.down();
+                if (stmt != null){
+                    lvl.up();
+                    str += stmt.toString(lvl) + "\n";
+                    lvl.down();
+                }
             }
             return str;
         }
@@ -416,11 +418,11 @@ public class AST {
     }
 
     public static class IfNode extends ASTNode {
-        public ConditionalOp condition;
+        public Expr condition;
         public BlockNode trueBranch;
         public BlockNode falseBranch;
 
-        public IfNode(ConditionalOp condition, BlockNode trueBranch, BlockNode falseBranch) {
+        public IfNode(Expr condition, BlockNode trueBranch, BlockNode falseBranch) {
             this.condition = condition;
             this.trueBranch = trueBranch;
             this.falseBranch = falseBranch;
@@ -448,10 +450,10 @@ public class AST {
     }
 
     public static class WhileNode extends ASTNode {
-        public ConditionalOp condition;
+        public Expr condition;
         public BlockNode body;
 
-        public WhileNode(ConditionalOp condition, BlockNode body) {
+        public WhileNode(Expr condition, BlockNode body) {
             this.condition = condition;
             this.body = body;
         }
@@ -476,11 +478,11 @@ public class AST {
 
     public static class ForNode extends ASTNode {
         public VarDeclNode init;
-        public ConditionalOp condition;
+        public Expr condition;
         public AssignmentNode update;
         public BlockNode body;
 
-        public ForNode(VarDeclNode init, ConditionalOp condition, AssignmentNode update, BlockNode body) {
+        public ForNode(VarDeclNode init, Expr condition, AssignmentNode update, BlockNode body) {
             this.init = init;
             this.condition = condition;
             this.update = update;
