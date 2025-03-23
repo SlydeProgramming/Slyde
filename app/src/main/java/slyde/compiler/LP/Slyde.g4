@@ -95,7 +95,7 @@ inputStmt: INPUT '(' STRING ')' ';';
 
 // Types
 type: 
-    'int' | 'float' | 'String' | 'boolean' | 'void' | IDENTIFIER;
+    'int' | 'double' | 'float' | 'String' | 'boolean' | 'void' | IDENTIFIER;
 
 // Arrays
 arrayDeclaration: 
@@ -126,7 +126,9 @@ MAIN: 'main';
 
 // Tokens
 IDENTIFIER: [a-zA-Z_][a-zA-Z_0-9]*;
-NUMBER: [0-9]+;
+NUMBER: [-+]?[0-9]+;
+DOUBLE: [-+]?(\d*\.\d+|\d+\.\d*)([eE][-+]?\d+)?;
+FLOAT: [-+]?(\d*\.\d+|\d+\.\d*)([eE][-+]?\d+)?'f';
 STRING: '"' .*? '"';
 BOOLEAN: 'true' | 'yes' | 'on' | 'false' | 'no' | 'off';
 

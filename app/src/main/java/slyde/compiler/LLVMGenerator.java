@@ -257,7 +257,11 @@ public class LLVMGenerator {
     private String generateExpression(ASTNode expr) {
         if (expr instanceof NumberNode) {
             return Integer.toString(((NumberNode) expr).value);
-        } else if (expr instanceof BinaryOpNode) {
+        } else if (expr instanceof FloatNode){
+            return Float.toString(((FloatNode) expr).value);
+        } else if (expr instanceof DoubleNode){
+            return Double.toString(((DoubleNode) expr).value);
+        }  else if (expr instanceof BinaryOpNode) {
             return generateBinaryOp((BinaryOpNode) expr);
         } else if (expr instanceof ConditionalOp){
             return generateCondOp((ConditionalOp) expr);
@@ -277,6 +281,10 @@ public class LLVMGenerator {
     private String[] generateExpression(ASTNode expr, boolean getType) {
         if (expr instanceof NumberNode) {
             return new String[] {Integer.toString(((NumberNode) expr).value), getLLVMType("int")};
+        } else if (expr instanceof FloatNode){
+            return new String[] {Float.toString(((FloatNode) expr).value), getLLVMType("float")};
+        } else if (expr instanceof DoubleNode){
+            return new String[] {Double.toString(((DoubleNode) expr).value), getLLVMType("float")};
         } else if (expr instanceof BinaryOpNode) {
             return new String[] {generateBinaryOp((BinaryOpNode) expr), getLLVMType("int")};
         } else if (expr instanceof ConditionalOp){
@@ -300,6 +308,7 @@ public class LLVMGenerator {
         String right = generateExpression(conditionalOp.right);
         String temp = newTempVar();
         String op = null;
+        String t = left[1] == "double" ? "f" : "i";
 
         switch (conditionalOp.operator) {
             case "==":
@@ -328,14 +337,14 @@ public class LLVMGenerator {
             System.err.println("Error: Invalid operation: " + conditionalOp.operator);
         }
 
-        llvmCode.append(indent.get() + temp + " = " + "icmp " + op + " " + left[1] + " " + left[0] + ", " + right + "\n");
+        llvmCode.append(indent.get() + temp + " = " + t + "cmp " + op + " " + left[1] + " " + left[0] + ", " + right + "\n");
 
 
         return temp;
     }
 
     private String generateBinaryOp(BinaryOpNode binOp) {
-        String left = generateExpression(binOp.left);
+        String[] left = generateExpression(binOp.left, true);
         String right = generateExpression(binOp.right);
         String temp = newTempVar();
         String op = binOp.operator.equals("+") ? "add" : "sub";
@@ -347,10 +356,13 @@ public class LLVMGenerator {
         
             case "/":
                 op = "sdiv";
+                if(left[1] == "double"){
+                    op = "fdiv";
+                }
             default:
                 break;
         }
-        llvmCode.append(indent.get() + temp + " = " + op + " i32 " + left + ", " + right + "\n");
+        llvmCode.append(indent.get() + temp + " = " + op + " " + left[1] + " " + left[0] + ", " + right + "\n");
         return temp;
     }
 
@@ -359,6 +371,8 @@ public class LLVMGenerator {
             case "int" -> "i32";
             case "boolean" -> "i1";
             case "void" -> "void";
+            case "double" -> "double";
+            case "float" -> "float";
             default -> "%" + type;
         };
     }

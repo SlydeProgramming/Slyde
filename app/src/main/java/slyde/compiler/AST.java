@@ -363,6 +363,34 @@ public class AST {
 
     }
 
+    public static class DoubleNode extends LiteralNode {
+        public double value;
+
+        public DoubleNode(double value){
+            this.value = value;
+        }
+
+        @Override
+        public String toString(Indent lvl) {
+            return lvl.get() + "Double: " + value;
+        }
+
+    }
+
+    public static class FloatNode extends LiteralNode {
+        public float value;
+
+        public FloatNode(float value){
+            this.value = value;
+        }
+
+        @Override
+        public String toString(Indent lvl) {
+            return lvl.get() + "Float: " + value;
+        }
+
+    }
+
     public static class NumberNode extends LiteralNode {
         public int value;
 
