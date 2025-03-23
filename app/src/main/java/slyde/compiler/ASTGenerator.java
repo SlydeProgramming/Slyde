@@ -17,8 +17,10 @@ import slyde.compiler.AST.IfNode;
 import slyde.compiler.AST.Indent;
 import slyde.compiler.AST.MainNode;
 import slyde.compiler.AST.MethodCallNode;
+import slyde.compiler.AST.NewInstanceNode;
 import slyde.compiler.AST.NumberNode;
 import slyde.compiler.AST.ProgramNode;
+import slyde.compiler.AST.StringNode;
 import slyde.compiler.AST.VarDeclNode;
 import slyde.compiler.LP.SlydeParser.ArgListContext;
 import slyde.compiler.LP.SlydeParser.AssignmentContext;
@@ -29,6 +31,7 @@ import slyde.compiler.LP.SlydeParser.ConstructorContext;
 import slyde.compiler.LP.SlydeParser.ExprContext;
 import slyde.compiler.LP.SlydeParser.IfStmtContext;
 import slyde.compiler.LP.SlydeParser.MethodCallContext;
+import slyde.compiler.LP.SlydeParser.NewInstanceContext;
 import slyde.compiler.LP.SlydeParser.ParamListContext;
 import slyde.compiler.LP.SlydeParser.ProgContext;
 import slyde.compiler.LP.SlydeParser.StatementContext;
@@ -138,6 +141,8 @@ public class ASTGenerator {
             return createIfNode((IfStmtContext) tree);
         } else if (tree instanceof AssignmentContext) {
             return createAssignmentNode((AssignmentContext) tree);
+        } else if (tree instanceof MethodCallContext) {
+            return createMethodCallNode((MethodCallContext) tree);
         } else {
             System.out.println(tree.toStringTree());
         }
@@ -204,6 +209,8 @@ public class ASTGenerator {
             return createMethodCallNode(ctx.methodCall());
         } else if (ctx.IDENTIFIER() != null) {
             return (Expr) createTerminalNode(ctx.IDENTIFIER());
+        } else if (ctx.newInstance() != null){
+            return createNewInstanceNode(ctx.newInstance());
         }
 
         if (ctx.expr(1) != null){
@@ -222,6 +229,13 @@ public class ASTGenerator {
         return left;
     }
 
+    public static NewInstanceNode createNewInstanceNode(NewInstanceContext ctx){
+        List<ASTNode> params = createArgsListNode(ctx.argList());
+        String name = ctx.IDENTIFIER().getText();
+
+        return new NewInstanceNode(name,params);
+    }
+
     public static MethodCallNode createMethodCallNode(MethodCallContext ctx){
         List<ASTNode> params = createArgsListNode(ctx.argList());
         String name = ctx.IDENTIFIER().getText();
@@ -231,6 +245,11 @@ public class ASTGenerator {
 
     public static List<ASTNode> createArgsListNode(ArgListContext ctx){
         List<ASTNode> args = new ArrayList<>();
+
+        if (ctx == null){
+            return args;
+        }
+
         for (int i = 0; i < ctx.expr().size(); i++){
             args.add(createExprNode(ctx.expr(i)));
         }
@@ -249,6 +268,10 @@ public class ASTGenerator {
 
     public static List<VarDeclNode> createParamsListNode(ParamListContext ctx){
         List<VarDeclNode> params = new ArrayList<>();
+
+        if(ctx == null){
+            return params;
+        }
 
         for (int i = 0; i < ctx.type().size(); i++){
             vars.add(currentContext + "." + ctx.IDENTIFIER(i).getText());
@@ -311,6 +334,8 @@ public class ASTGenerator {
         } else if (isBool(text)){
             boolean value = text.equals("yes") || text.equals("true") || text.equals("on");
             return new BooleanNode(value);
+        } else if (text.contains("\"")){
+            return new StringNode(text);
         }
         return new IdentifierNode(text, getType(text));
     }

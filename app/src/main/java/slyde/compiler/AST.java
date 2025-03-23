@@ -126,6 +126,31 @@ public class AST {
             return str;
         }
     }
+
+    public static class NewInstanceNode extends Expr{
+        public String name;
+        public List<ASTNode> args;
+
+        public NewInstanceNode(String name, List<ASTNode> args){
+            this.name = name;
+            this.args = args;
+        }
+
+        @Override
+        public String toString(Indent lvl) {
+            String str = lvl.get() + "New Instance:\n";
+            str += lvl.up() + "Name: " + name + "\n";
+            str += lvl.get() + "Args:\n";
+            for (ASTNode n : args){
+                lvl.up();
+                str += n.toString(lvl) + "\n";
+                lvl.down();
+            }
+            return str;
+        }
+
+    };
+
     public static class ReturnNode extends ASTNode {
         public ASTNode expr;
         public String type;

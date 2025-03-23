@@ -1,5 +1,6 @@
 package slyde.compiler;
 
+import java.util.ArrayList;
 import java.util.List;
 
 import slyde.compiler.AST.*;
@@ -8,6 +9,7 @@ public class LLVMGenerator {
     private StringBuilder llvmCode;
     private int tempVarCounter;
     private int labelCounter;
+    private int strVarCounter;
 
     private boolean hasRet = false;
 
@@ -23,13 +25,24 @@ public class LLVMGenerator {
         return "%t" + (tempVarCounter++);
     }
 
+    private String newStrVar() {
+        return "%strVar" + (strVarCounter++);
+    }
+
     private String newLabel() {
         return "label" + (labelCounter++);
     }
 
+    public void createPreDefinedMethods(){
+        llvmCode.append("define void @print(i8** %output){\n\t%loadedOutput = load i8*, i8** %output\n\tcall i32 @puts(i8* %loadedOutput)\n\tret void\n}\n\n\n\n");
+    }
+
     public String generate(ProgramNode program) {
         llvmCode.append("; Generated LLVM IR\n");
-        llvmCode.append("declare i32 @puts(i8*)");
+        llvmCode.append("declare i32 @puts(i8*)\n");
+
+        createPreDefinedMethods();
+
         for (ClassNode classNode : program.classes) {
             generateClass(classNode);
         }
@@ -87,8 +100,8 @@ public class LLVMGenerator {
         for (VarDeclNode n : vars){
 
             llvmCode.append(indent.get() + "%" + n.name + " = getelementptr %" + classNode.name + ", %" + classNode.name + "* %this, i32 0, i32 " + index + "\n");
-            String valueRef = generateExpression(n.value);
-            llvmCode.append(indent.get() + "store " + getLLVMType(n.type) + " " + valueRef + ", " + getLLVMType(n.type) + "* %" + n.name + "\n");
+            String[] valueRef = generateExpression(n.value, true);
+            llvmCode.append(indent.get() + "store " + valueRef[1] + " " + valueRef[0] + ", " + getLLVMType(n.type) + "* %" + n.name + "\n");
             index++;
         }
 
@@ -184,8 +197,28 @@ public class LLVMGenerator {
                 generateFor((ForNode) stmt);
             } else if (stmt instanceof AssignmentNode){
                 generateAssign((AssignmentNode) stmt);
+            } else if (stmt instanceof MethodCallNode){
+                generateMethodCall((MethodCallNode) stmt);
             }
         }
+    }
+
+    private void generateMethodCall(MethodCallNode node){
+        List<String[]> refs = new ArrayList<>();
+
+        for (ASTNode a : node.arguments){
+            refs.add(generateExpression(a, true));
+        }
+
+        llvmCode.append(indent.get() + "call " + "void" + " @" + node.methodName + "(");
+
+        boolean first = true;
+        for (String[] ref : refs){
+            llvmCode.append((first ? "" : ",") + ref[1] + " " + ref[0]);
+            first = false;
+        }
+
+        llvmCode.append(")\n");
     }
 
     private void generateAssign(AssignmentNode node){
@@ -197,8 +230,8 @@ public class LLVMGenerator {
         String llvmType = getLLVMType(varDecl.type);
         llvmCode.append(indent.get() + "%" + varDecl.name + " = alloca " + llvmType + ", align 1\n");
         if (varDecl.value != null) {
-            String value = generateExpression(varDecl.value);
-            llvmCode.append(indent.get() + "store " + llvmType + " " + value + ", " + llvmType + "* %" + varDecl.name + "\n");
+            String[] value = generateExpression(varDecl.value, true);
+            llvmCode.append(indent.get() + "store " + value[1] + " " + value[0] + ", " + llvmType + "* %" + varDecl.name + "\n");
         }
     }
 
@@ -263,6 +296,8 @@ public class LLVMGenerator {
             return Double.toString(((DoubleNode) expr).value);
         }  else if (expr instanceof BinaryOpNode) {
             return generateBinaryOp((BinaryOpNode) expr);
+        } else if (expr instanceof StringNode){
+            return createString((StringNode) expr);
         } else if (expr instanceof ConditionalOp){
             return generateCondOp((ConditionalOp) expr);
         } else if (expr instanceof BooleanNode){
@@ -273,6 +308,8 @@ public class LLVMGenerator {
             }
         } else if (expr instanceof IdentifierNode){
             return "%" + ((IdentifierNode) expr).name;
+        } else if (expr instanceof NewInstanceNode){
+            return generateNewInstance((NewInstanceNode) expr)[0];
         }
         return null;
     }
@@ -287,6 +324,8 @@ public class LLVMGenerator {
             return new String[] {Double.toString(((DoubleNode) expr).value), getLLVMType("float")};
         } else if (expr instanceof BinaryOpNode) {
             return new String[] {generateBinaryOp((BinaryOpNode) expr), getLLVMType("int")};
+        } else if (expr instanceof StringNode){
+            return createString((StringNode) expr, true);
         } else if (expr instanceof ConditionalOp){
             return new String[] {generateCondOp((ConditionalOp) expr), getLLVMType("boolean")};
         } else if (expr instanceof BooleanNode){
@@ -296,11 +335,86 @@ public class LLVMGenerator {
                 return new String[] {"0", getLLVMType("boolean")};
             }
         } else if (expr instanceof IdentifierNode){
-            String temp = newTempVar();
-            llvmCode.append(indent.get() + temp + " = load " + getLLVMType(((IdentifierNode) expr).type) + ", " + getLLVMType(((IdentifierNode) expr).type) + "* %" + ((IdentifierNode) expr).name  + "\n");
-            return new String[] {temp, getLLVMType(((IdentifierNode) expr).type)};
+            return new String[] {"%" + ((IdentifierNode) expr).name, getLLVMType(((IdentifierNode) expr).type) + "*"};
+        } else if (expr instanceof NewInstanceNode){
+            return generateNewInstance((NewInstanceNode) expr);
         }
+
+
         return new String[] {null, null};
+    }
+
+    private String[] generateNewInstance(NewInstanceNode n){
+        String temp = newTempVar();
+        llvmCode.append(indent.get() + temp + " = alloca %" + n.name + "\n");
+        List<String[]> refs = new ArrayList<>();
+
+        for (ASTNode a : n.args){
+            refs.add(generateExpression(a, true));
+        }
+
+        llvmCode.append(indent.get() + "call void @" + n.name + "_constructor(%" + n.name + "* " + temp);
+        for (String[] ref : refs){
+            llvmCode.append(", " + ref[1] + " " + ref[0]);
+        }
+
+        llvmCode.append(")\n");
+
+        return new String[]{temp, getLLVMType(n.name) + "*"};
+    }
+
+    private String[] createString(StringNode str, boolean getType){
+        int len = str.value.length();
+        String temp = newTempVar();
+        String value = str.value;
+        String type = "[" + (len - 1) + " x i8]";
+
+        llvmCode.append(indent.get() + temp + " = alloca " + type + ", align 1\n");
+
+        String ref = newStrVar();
+
+        llvmCode.append(indent.get() + ref + " = getelementptr " + type + ", " + type + "* " + temp + ", i32 0, i32 0\n");
+        llvmCode.append(indent.get() + "store i8 " + (int) value.charAt(1) + ", i8* " + ref + "\n");
+
+        for (int i = 2; i < len - 1; i++){
+            String newStringPtr = newStrVar();
+            llvmCode.append(indent.get() + newStringPtr + " = getelementptr i8, i8* " + ref + ", i32 " + (i-1) + "\n");
+            llvmCode.append(indent.get() + "store i8 " + (int) value.charAt(i) + ", i8* " + newStringPtr + "\n");
+        }
+
+        String newStringPtr = newStrVar();
+        llvmCode.append(indent.get() + newStringPtr + " = getelementptr i8, i8* " + ref + ", i32 " + (len - 2) + "\n");
+        llvmCode.append(indent.get() + "store i8 0, i8* " + newStringPtr + "\n");
+
+        return new String[] {ref, "i8*"};
+
+    }
+
+    private String createString(StringNode str){
+        int len = str.value.length();
+        String temp = newTempVar();
+        String value = str.value;
+        String type = "[" + (len - 1) + " x i8]";
+
+        llvmCode.append(indent.get() + temp + " = alloca " + type + ", align 1\n");
+
+        String ref = newStrVar();
+
+        llvmCode.append(indent.get() + ref + " = getelementptr " + type + ", " + type + "* " + temp + ", i32 0, i32 0\n");
+        llvmCode.append(indent.get() + "store i8 " + (int) value.charAt(1) + ", i8* " + ref + "\n");
+
+        for (int i = 2; i < len - 1; i++){
+            String newStringPtr = newStrVar();
+            llvmCode.append(indent.get() + newStringPtr + " = getelementptr i8, i8* " + ref + ", i32 " + (i-1) + "\n");
+            llvmCode.append(indent.get() + "store i8 " + (int) value.charAt(i) + ", i8* " + newStringPtr + "\n");
+        }
+
+        String newStringPtr = newStrVar();
+        llvmCode.append(indent.get() + newStringPtr + " = getelementptr i8, i8* " + ref + ", i32 " + (len - 2) + "\n");
+        llvmCode.append(indent.get() + "store i8 0, i8* " + newStringPtr + "\n");
+
+        return ref;
+
     }
 
     private String generateCondOp(ConditionalOp conditionalOp){
@@ -373,6 +487,7 @@ public class LLVMGenerator {
             case "void" -> "void";
             case "double" -> "double";
             case "float" -> "float";
+            case "String" -> "i8*";
             default -> "%" + type;
         };
     }

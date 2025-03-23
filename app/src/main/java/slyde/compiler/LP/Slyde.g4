@@ -35,8 +35,6 @@ statement:
     | ifStmt 
     | whileStmt 
     | forStmt 
-    | printStmt 
-    | inputStmt 
     | expr ';';
 
 // Variable Declaration
@@ -72,6 +70,7 @@ expr:
     | methodCall
     | '(' expr ')'
     | IDENTIFIER
+    | newInstance
     ;
 
 // Control Flow
@@ -89,10 +88,6 @@ returnStmt:
     RETURN expr ';';
 
 
-// I/O
-printStmt: PRINT '(' expr ')' ';';
-inputStmt: INPUT '(' STRING ')' ';';
-
 // Types
 type: 
     'int' | 'double' | 'float' | 'String' | 'boolean' | 'void' | IDENTIFIER;
@@ -104,9 +99,11 @@ arrayDeclaration:
 arrayLiteral: 
     '[' (expr (',' expr)*)? ']';
 
+newInstance:
+    'new' IDENTIFIER '(' argList? ')';
 
 SLC:
-    '//' .*? '\n' -> skip;
+    '//' ~[\r\n]* -> skip;
 
 MLC:
     '/*' .*? '*/' -> skip;
@@ -119,16 +116,14 @@ ELSE: 'else';
 WHILE: 'while';
 FOR: 'for';
 RETURN: 'return';
-PRINT: 'print';
-INPUT: 'input';
 CONSTRUCT: 'constructor';
 MAIN: 'main';
 
 // Tokens
 IDENTIFIER: [a-zA-Z_][a-zA-Z_0-9]*;
 NUMBER: [-+]?[0-9]+;
-DOUBLE: [-+]?(\d*\.\d+|\d+\.\d*)([eE][-+]?\d+)?;
-FLOAT: [-+]?(\d*\.\d+|\d+\.\d*)([eE][-+]?\d+)?'f';
+DOUBLE: [-+]?([0-9]*.[0-9]+|[0-9]+.[0-9]*)[eE][-+]?[0-9]+?;
+FLOAT: [-+]?([0-9]*.[0-9]+|[0-9]+.[0-9]*)[eE][-+]?[0-9]+?'f';
 STRING: '"' .*? '"';
 BOOLEAN: 'true' | 'yes' | 'on' | 'false' | 'no' | 'off';
 

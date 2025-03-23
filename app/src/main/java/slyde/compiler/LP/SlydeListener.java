@@ -198,26 +198,6 @@ public interface SlydeListener extends ParseTreeListener {
 	 */
 	void exitReturnStmt(SlydeParser.ReturnStmtContext ctx);
 	/**
-	 * Enter a parse tree produced by {@link SlydeParser#printStmt}.
-	 * @param ctx the parse tree
-	 */
-	void enterPrintStmt(SlydeParser.PrintStmtContext ctx);
-	/**
-	 * Exit a parse tree produced by {@link SlydeParser#printStmt}.
-	 * @param ctx the parse tree
-	 */
-	void exitPrintStmt(SlydeParser.PrintStmtContext ctx);
-	/**
-	 * Enter a parse tree produced by {@link SlydeParser#inputStmt}.
-	 * @param ctx the parse tree
-	 */
-	void enterInputStmt(SlydeParser.InputStmtContext ctx);
-	/**
-	 * Exit a parse tree produced by {@link SlydeParser#inputStmt}.
-	 * @param ctx the parse tree
-	 */
-	void exitInputStmt(SlydeParser.InputStmtContext ctx);
-	/**
 	 * Enter a parse tree produced by {@link SlydeParser#type}.
 	 * @param ctx the parse tree
 	 */
@@ -247,4 +227,14 @@ public interface SlydeListener extends ParseTreeListener {
 	 * @param ctx the parse tree
 	 */
 	void exitArrayLiteral(SlydeParser.ArrayLiteralContext ctx);
+	/**
+	 * Enter a parse tree produced by {@link SlydeParser#newInstance}.
+	 * @param ctx the parse tree
+	 */
+	void enterNewInstance(SlydeParser.NewInstanceContext ctx);
+	/**
+	 * Exit a parse tree produced by {@link SlydeParser#newInstance}.
+	 * @param ctx the parse tree
+	 */
+	void exitNewInstance(SlydeParser.NewInstanceContext ctx);
 }
