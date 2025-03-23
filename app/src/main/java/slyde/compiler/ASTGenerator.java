@@ -251,6 +251,10 @@ public class ASTGenerator {
         List<VarDeclNode> params = new ArrayList<>();
 
         for (int i = 0; i < ctx.type().size(); i++){
+            String name = ctx.IDENTIFIER(i).getText();
+            String type = ctx.type(i).getText();
+            vars.add(currentContext + "." + name);
+            varTypes.add(type);
             params.add(new VarDeclNode(ctx.type(i).getText(), ctx.IDENTIFIER(i).getText(), null));
         }
 
