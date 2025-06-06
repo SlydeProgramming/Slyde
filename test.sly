@@ -1,23 +1,17 @@
+
+
 class Test{
-    int hello = 0;
-    int hi = 2 + 2;
-    String hope = "Hello World!";
+
+    String test = "Hello World!";
 
     constructor(){
-        print(hope);
-    } 
+        print(test);
+    }
 }
 
+
 main(){
-    int temp = 2 + 2;
-
     Test test = new Test();
-
-    if(yes){
-        temp = 3;
-    }
-
-
 }
 
 

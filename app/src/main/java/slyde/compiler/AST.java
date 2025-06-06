@@ -5,40 +5,47 @@ import java.util.List;
 
 public class AST {
 
-    public static class Indent{
-        int lvl = -3;
-        String indentType = "  ";
+    public static class Indent {
+        private int lvl = -3;
+        private String indentType = "  ";
 
-        public Indent(){
+        public Indent() {
             lvl = 0;
         }
 
-        public Indent(String indentType){
+        public Indent(String indentType) {
             lvl = 0;
             this.indentType = indentType;
         }
 
-        public String get(){
+        public String get() {
             String str = "";
-            for (int i = 0; i < lvl; i++){
+            for (int i = 0; i < lvl; i++) {
                 str += indentType;
             }
             return str;
         }
 
-        public String up(){
+        public String up() {
             lvl++;
             return get();
         }
 
-        public String down(){
+        public String down() {
             lvl--;
+            return get();
+        }
+
+        @Override
+        public String toString() {
             return get();
         }
     }
 
     public static abstract class ASTNode {
         public abstract String toString(Indent lvl);
+
+        public abstract <T> void explode(MetaDataString<T> ctx);
     }
 
     public static class ProgramNode extends ASTNode {
@@ -54,13 +61,19 @@ public class AST {
         public String toString(Indent lvl) {
             String str = lvl.get() + "Prog:\n";
 
-            for (ClassNode c : classes){
+            for (ClassNode c : classes) {
                 lvl.up();
                 str += c.toString(lvl) + "\n";
                 lvl.down();
             }
 
             return str;
+        }
+
+        @Override
+        public <T> void explode(MetaDataString<T> ctx) {
+            throw new UnsupportedOperationException(
+                    "Unexpected node exploded ctx: " + ctx.obj.toString());
         }
 
     }
@@ -81,33 +94,33 @@ public class AST {
             this.body = body;
         }
 
-        public ConstructorNode getConstructor(){
-            for (ASTNode n : body){
-                if (n instanceof ConstructorNode){
+        public ConstructorNode getConstructor() {
+            for (ASTNode n : body) {
+                if (n instanceof ConstructorNode) {
                     return (ConstructorNode) n;
                 }
             }
             return null;
         }
 
-        public List<MethodNode> getMethods(){
+        public List<MethodNode> getMethods() {
             List<MethodNode> nodes = new ArrayList<>();
-            for (ASTNode n : body){
-                if (n instanceof MethodNode){
+            for (ASTNode n : body) {
+                if (n instanceof MethodNode) {
                     nodes.add((MethodNode) n);
                 }
             }
             return nodes;
         }
 
-        public List<VarDeclNode> getFields(){
+        public List<VarDeclNode> getFields() {
             List<VarDeclNode> nodes = new ArrayList<>();
-            for (ASTNode n : body){
-                if (n instanceof VarDeclNode){
+            for (ASTNode n : body) {
+                if (n instanceof VarDeclNode) {
                     nodes.add((VarDeclNode) n);
                 }
             }
-            if (nodes.isEmpty()){
+            if (nodes.isEmpty()) {
                 return null;
             }
             return nodes;
@@ -117,7 +130,7 @@ public class AST {
         public String toString(Indent lvl) {
             String str = lvl.get() + "Class:\n";
             str += lvl.up() + "Name: " + name + "\n" + lvl.get() + "Body:\n";
-            for (ASTNode n : body){
+            for (ASTNode n : body) {
                 lvl.up();
                 str += n.toString(lvl) + "\n";
                 lvl.down();
@@ -125,13 +138,19 @@ public class AST {
             lvl.down();
             return str;
         }
+
+        @Override
+        public <T> void explode(MetaDataString<T> ctx) {
+            throw new UnsupportedOperationException(
+                    "Unexpected node exploded ctx: " + ctx.obj.toString());
+        }
     }
 
-    public static class NewInstanceNode extends Expr{
+    public static class NewInstanceNode extends Expr {
         public String name;
         public List<ASTNode> args;
 
-        public NewInstanceNode(String name, List<ASTNode> args){
+        public NewInstanceNode(String name, List<ASTNode> args) {
             this.name = name;
             this.args = args;
         }
@@ -141,7 +160,7 @@ public class AST {
             String str = lvl.get() + "New Instance:\n";
             str += lvl.up() + "Name: " + name + "\n";
             str += lvl.get() + "Args:\n";
-            for (ASTNode n : args){
+            for (ASTNode n : args) {
                 lvl.up();
                 str += n.toString(lvl) + "\n";
                 lvl.down();
@@ -169,7 +188,6 @@ public class AST {
         }
     }
 
-
     public static class VarDeclNode extends ASTNode {
         public String type;
         public String name;
@@ -187,7 +205,7 @@ public class AST {
             str += lvl.up() + "Type: " + type + "\n" + lvl.get() + "Name: " + name + "\n" + lvl.get() + "Value:\n";
             String v;
 
-            if (value == null){
+            if (value == null) {
                 lvl.up();
                 str += lvl.get() + "null";
                 lvl.down();
@@ -197,7 +215,7 @@ public class AST {
                 str += v;
                 lvl.down();
             }
-            lvl.down(); 
+            lvl.down();
             return str;
         }
     }
@@ -224,11 +242,11 @@ public class AST {
 
     }
 
-    public static class ConstructorNode extends ASTNode{
+    public static class ConstructorNode extends ASTNode {
         public List<VarDeclNode> params;
         public BlockNode body;
 
-        public ConstructorNode(List<VarDeclNode> params, BlockNode body){
+        public ConstructorNode(List<VarDeclNode> params, BlockNode body) {
             this.params = params;
             this.body = body;
         }
@@ -251,11 +269,11 @@ public class AST {
         }
     }
 
-    public static class MainNode extends ASTNode{
+    public static class MainNode extends ASTNode {
         public List<VarDeclNode> params;
         public BlockNode body;
 
-        public MainNode(List<VarDeclNode> params, BlockNode body){
+        public MainNode(List<VarDeclNode> params, BlockNode body) {
             this.params = params;
             this.body = body;
         }
@@ -264,7 +282,7 @@ public class AST {
         public String toString(Indent lvl) {
             String str = lvl.get() + "Main:\n";
             str += lvl.up() + "Parameters:\n";
-            if (params != null){
+            if (params != null) {
                 for (VarDeclNode param : params) {
                     lvl.up();
                     str += param.toString(lvl) + "\n";
@@ -279,7 +297,6 @@ public class AST {
             return str;
         }
     }
-
 
     public static class MethodNode extends ASTNode {
         public String returnType;
@@ -325,7 +342,7 @@ public class AST {
         public String toString(Indent lvl) {
             String str = lvl.get() + "Block:\n";
             for (ASTNode stmt : statements) {
-                if (stmt != null){
+                if (stmt != null) {
                     lvl.up();
                     str += stmt.toString(lvl) + "\n";
                     lvl.down();
@@ -336,18 +353,18 @@ public class AST {
 
     }
 
-    public static abstract class Expr extends ASTNode{
+    public static abstract class Expr extends ASTNode {
 
     }
 
-    public abstract static class LiteralNode extends Expr{
+    public abstract static class LiteralNode extends Expr {
 
     }
 
     public static class StringNode extends LiteralNode {
         public String value;
 
-        public StringNode(String value){
+        public StringNode(String value) {
             this.value = value;
         }
 
@@ -360,7 +377,7 @@ public class AST {
     public static class BooleanNode extends LiteralNode {
         public Boolean value;
 
-        public BooleanNode(Boolean value){
+        public BooleanNode(Boolean value) {
             this.value = value;
         }
 
@@ -370,11 +387,11 @@ public class AST {
         }
     }
 
-    public static class IdentifierNode extends Expr{
+    public static class IdentifierNode extends Expr {
         public String name;
         public String type;
 
-        public IdentifierNode(String name, String type){
+        public IdentifierNode(String name, String type) {
             this.name = name;
             this.type = type;
         }
@@ -384,14 +401,12 @@ public class AST {
             return lvl.get() + "Identifier: " + name;
         }
 
-        
-
     }
 
     public static class DoubleNode extends LiteralNode {
         public double value;
 
-        public DoubleNode(double value){
+        public DoubleNode(double value) {
             this.value = value;
         }
 
@@ -405,7 +420,7 @@ public class AST {
     public static class FloatNode extends LiteralNode {
         public float value;
 
-        public FloatNode(float value){
+        public FloatNode(float value) {
             this.value = value;
         }
 
@@ -429,12 +444,12 @@ public class AST {
         }
     }
 
-    public static class ConditionalOp extends Expr{
+    public static class ConditionalOp extends Expr {
         public String operator;
         public Expr left;
         public Expr right;
 
-        public ConditionalOp(Expr left, Expr right, String operator){
+        public ConditionalOp(Expr left, Expr right, String operator) {
             this.operator = operator;
             this.left = left;
             this.right = right;
@@ -444,7 +459,7 @@ public class AST {
         public String toString(Indent lvl) {
             String str = "";
 
-            str += lvl.get() + "ConditionalOp:\n"; 
+            str += lvl.get() + "ConditionalOp:\n";
             lvl.up();
             str += left.toString(lvl) + "\n";
             str += lvl.get() + "Operator: " + operator + "\n";
@@ -453,8 +468,6 @@ public class AST {
             return str;
         }
     }
-
-    
 
     public static class BinaryOpNode extends Expr {
         public String operator;
@@ -471,7 +484,7 @@ public class AST {
         public String toString(Indent lvl) {
             String str = "";
 
-            str += lvl.get() + "BinaryOp:\n"; 
+            str += lvl.get() + "BinaryOp:\n";
             lvl.up();
             str += left.toString(lvl) + "\n";
             str += lvl.get() + "Operator: " + operator + "\n";
@@ -499,7 +512,7 @@ public class AST {
             lvl.up();
             str += condition.toString(lvl) + "\n";
             lvl.down();
-            str += lvl.get() + "True Branch:\n"; 
+            str += lvl.get() + "True Branch:\n";
             lvl.up();
             str += trueBranch.toString(lvl) + "\n";
             lvl.down();
@@ -526,19 +539,18 @@ public class AST {
         public String toString(Indent lvl) {
             String str = "";
 
-            str += lvl.get() + "WhileNode:\n" + lvl.up() + "Condition:\n"; 
+            str += lvl.get() + "WhileNode:\n" + lvl.up() + "Condition:\n";
             lvl.up();
             str += condition.toString(lvl) + "\n";
             lvl.down();
             str += lvl.get() + "Body:\n";
-            lvl.up(); 
+            lvl.up();
             str += body.toString(lvl);
             lvl.down();
             lvl.down();
             return str;
         }
     }
-
 
     public static class ForNode extends ASTNode {
         public VarDeclNode init;
@@ -558,18 +570,18 @@ public class AST {
             String str = "";
 
             str += lvl.get() + "ForNode:\n" + lvl.up() + "Init:\n";
-            lvl.up(); 
+            lvl.up();
             str += init.toString(lvl) + "\n";
             lvl.down();
-            str += lvl.get() + "Condition:\n"; 
+            str += lvl.get() + "Condition:\n";
             lvl.up();
             str += condition.toString(lvl) + "\n";
             lvl.down();
-            str += lvl.get() + "Update:\n"; 
+            str += lvl.get() + "Update:\n";
             lvl.up();
             str += update.toString(lvl) + "\n";
             lvl.down();
-            str += lvl.get() + "Body:\n"; 
+            str += lvl.get() + "Body:\n";
             lvl.up();
             str += body.toString(lvl) + "\n";
             lvl.down();
@@ -577,7 +589,6 @@ public class AST {
             return str;
         }
     }
-
 
     public static class MethodCallNode extends Expr {
         public String methodName;
@@ -612,7 +623,7 @@ public class AST {
 
         @Override
         public String toString(Indent lvl) {
-            String str = lvl.get() + "Print:\n" + lvl.up() + "Value:\n"; 
+            String str = lvl.get() + "Print:\n" + lvl.up() + "Value:\n";
             lvl.up();
             str += value.toString(lvl);
             lvl.down();
@@ -621,7 +632,5 @@ public class AST {
         }
 
     }
-
-
 
 }

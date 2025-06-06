@@ -3,64 +3,32 @@ package slyde.compiler;
 import org.antlr.v4.runtime.tree.ParseTree;
 import org.antlr.v4.runtime.tree.TerminalNode;
 
-import slyde.compiler.AST.ASTNode;
-import slyde.compiler.AST.AssignmentNode;
-import slyde.compiler.AST.BinaryOpNode;
-import slyde.compiler.AST.BlockNode;
-import slyde.compiler.AST.BooleanNode;
-import slyde.compiler.AST.ClassNode;
-import slyde.compiler.AST.ConditionalOp;
-import slyde.compiler.AST.ConstructorNode;
-import slyde.compiler.AST.Expr;
-import slyde.compiler.AST.IdentifierNode;
-import slyde.compiler.AST.IfNode;
-import slyde.compiler.AST.Indent;
-import slyde.compiler.AST.MainNode;
-import slyde.compiler.AST.MethodCallNode;
-import slyde.compiler.AST.NewInstanceNode;
-import slyde.compiler.AST.NumberNode;
-import slyde.compiler.AST.ProgramNode;
-import slyde.compiler.AST.StringNode;
-import slyde.compiler.AST.VarDeclNode;
-import slyde.compiler.LP.SlydeParser.ArgListContext;
-import slyde.compiler.LP.SlydeParser.AssignmentContext;
-import slyde.compiler.LP.SlydeParser.BlockContext;
-import slyde.compiler.LP.SlydeParser.ClassBodyContext;
-import slyde.compiler.LP.SlydeParser.ClassDeclarationContext;
-import slyde.compiler.LP.SlydeParser.ConstructorContext;
-import slyde.compiler.LP.SlydeParser.ExprContext;
-import slyde.compiler.LP.SlydeParser.IfStmtContext;
-import slyde.compiler.LP.SlydeParser.MethodCallContext;
-import slyde.compiler.LP.SlydeParser.NewInstanceContext;
-import slyde.compiler.LP.SlydeParser.ParamListContext;
-import slyde.compiler.LP.SlydeParser.ProgContext;
-import slyde.compiler.LP.SlydeParser.StatementContext;
-import slyde.compiler.LP.SlydeParser.VarDeclContext;
+import slyde.compiler.AST.*;
+import slyde.compiler.LP.SlydeParser.*;
 
 import java.util.ArrayList;
 import java.util.List;
 
-
 public class ASTGenerator {
 
-    public static class Context{
+    public static class Context {
         String name;
         Context parent = null;
 
-        public Context(String name){
+        public Context(String name) {
             this.name = name;
         }
 
-        public Context(String name, Context parent){
-            this.name =name;
+        public Context(String name, Context parent) {
+            this.name = name;
             this.parent = parent;
         }
 
-        public Context getParent(){
+        public Context getParent() {
             return parent;
         }
 
-        public String getName(){
+        public String getName() {
             return name;
         }
 
@@ -68,7 +36,7 @@ public class ASTGenerator {
         public String toString() {
             return name;
         }
-        
+
     }
 
     public static List<String> vars = new ArrayList<>();
@@ -78,7 +46,7 @@ public class ASTGenerator {
 
     public static int blockIndex = 0;
 
-    public static String getNewBlockContext(){
+    public static String getNewBlockContext() {
         String str = ".block" + blockIndex;
         blockIndex++;
         return str;
@@ -89,10 +57,7 @@ public class ASTGenerator {
 
         currentContext = new Context("prog");
 
-        
-
         MainNode main = createMainNode(ctx.paramList(0), ctx.block(0));
-
 
         for (int i = 0; i < ctx.classDeclaration().size(); i++) {
             ClassDeclarationContext classDeclTree = ctx.classDeclaration(i);
@@ -102,7 +67,7 @@ public class ASTGenerator {
         return new ProgramNode(classNodes, main);
     }
 
-    public static ClassNode createClassNode(ClassDeclarationContext ctx){
+    public static ClassNode createClassNode(ClassDeclarationContext ctx) {
         List<TerminalNode> TNL = ctx.IDENTIFIER();
         String name = TNL.get(0).getText();
 
@@ -112,32 +77,30 @@ public class ASTGenerator {
 
         body = createClassBodyNode(ctx.classBody());
 
-
         return new ClassNode(name, body);
     }
 
-
-    public static List<ASTNode> createClassBodyNode(ClassBodyContext ctx){
+    public static List<ASTNode> createClassBodyNode(ClassBodyContext ctx) {
         List<ASTNode> body = new ArrayList<>();
-        for (int i =0; i < ctx.getChildCount(); i++){
-           body.add(createASTNode(ctx.getChild(i)));
+        for (int i = 0; i < ctx.getChildCount(); i++) {
+            body.add(createASTNode(ctx.getChild(i)));
         }
         return body;
     }
 
-    public static ASTNode createASTNode(ParseTree tree){
+    public static ASTNode createASTNode(ParseTree tree) {
 
-        if (tree instanceof VarDeclContext){
+        if (tree instanceof VarDeclContext) {
             return createVarDeclNode((VarDeclContext) tree);
         } else if (tree instanceof TerminalNode) {
             return createTerminalNode((TerminalNode) tree);
-        } else if (tree instanceof ConstructorContext){
+        } else if (tree instanceof ConstructorContext) {
             return createConstructorNode((ConstructorContext) tree);
-        } else if (tree instanceof ExprContext){
+        } else if (tree instanceof ExprContext) {
             return createExprNode((ExprContext) tree);
-        } else if (tree instanceof StatementContext){
+        } else if (tree instanceof StatementContext) {
             return createASTNode(tree.getChild(0));
-        } else if (tree instanceof IfStmtContext){
+        } else if (tree instanceof IfStmtContext) {
             return createIfNode((IfStmtContext) tree);
         } else if (tree instanceof AssignmentContext) {
             return createAssignmentNode((AssignmentContext) tree);
@@ -149,7 +112,7 @@ public class ASTGenerator {
         return null;
     }
 
-    public static AssignmentNode createAssignmentNode(AssignmentContext ctx){
+    public static AssignmentNode createAssignmentNode(AssignmentContext ctx) {
         String name = ctx.IDENTIFIER().getText();
         int exprSize = ctx.expr().size();
         ASTNode value = createASTNode(ctx.expr(exprSize - 1));
@@ -157,7 +120,7 @@ public class ASTGenerator {
         return new AssignmentNode(name, value);
     }
 
-    public static IfNode createIfNode(IfStmtContext ctx){
+    public static IfNode createIfNode(IfStmtContext ctx) {
 
         String blockContext = getNewBlockContext();
 
@@ -168,7 +131,7 @@ public class ASTGenerator {
         BlockNode trueBranch = createBlockNode(ctx.block(0));
 
         BlockNode falseBranch = null;
-        if (ctx.ELSE() != null){
+        if (ctx.ELSE() != null) {
             falseBranch = createBlockNode(ctx.block(1));
         }
 
@@ -177,14 +140,14 @@ public class ASTGenerator {
         return new IfNode(condition, trueBranch, falseBranch);
     }
 
-    public static MainNode createMainNode(ParamListContext ctx1, BlockContext ctx2){
+    public static MainNode createMainNode(ParamListContext ctx1, BlockContext ctx2) {
 
         String blockContext = getNewBlockContext();
 
         currentContext = new Context(currentContext + "." + blockContext, currentContext);
-        
+
         List<VarDeclNode> params = null;
-        if (ctx1 != null){
+        if (ctx1 != null) {
             params = createParamsListNode(ctx1);
         }
         BlockNode body = createBlockNode(ctx2);
@@ -194,71 +157,69 @@ public class ASTGenerator {
         return new MainNode(params, body);
     }
 
-    public static Expr createExprNode(ExprContext ctx){
+    public static Expr createExprNode(ExprContext ctx) {
         Expr left = null;
 
-        if(ctx.expr(0) != null){
+        if (ctx.expr(0) != null) {
             left = createExprNode(ctx.expr(0));
-        } else if (ctx.NUMBER() != null){
+        } else if (ctx.NUMBER() != null) {
             return (Expr) createTerminalNode(ctx.NUMBER());
         } else if (ctx.STRING() != null) {
             return (Expr) createTerminalNode(ctx.STRING());
         } else if (ctx.BOOLEAN() != null) {
             return (Expr) createTerminalNode(ctx.BOOLEAN());
-        } else if (ctx.methodCall() != null){
+        } else if (ctx.methodCall() != null) {
             return createMethodCallNode(ctx.methodCall());
         } else if (ctx.IDENTIFIER() != null) {
             return (Expr) createTerminalNode(ctx.IDENTIFIER());
-        } else if (ctx.newInstance() != null){
+        } else if (ctx.newInstance() != null) {
             return createNewInstanceNode(ctx.newInstance());
         }
 
-        if (ctx.expr(1) != null){
+        if (ctx.expr(1) != null) {
             String operator = ctx.getChild(1).getText();
             Expr right = createExprNode(ctx.expr(1));
 
-            if(ctx.binOp() != null){
+            if (ctx.binOp() != null) {
                 return new BinaryOpNode(left, operator, right);
             } else if (ctx.compareOp() != null) {
                 return new ConditionalOp(left, right, operator);
             }
         }
 
-
-
         return left;
     }
 
-    public static NewInstanceNode createNewInstanceNode(NewInstanceContext ctx){
+    public static NewInstanceNode createNewInstanceNode(NewInstanceContext ctx) {
         List<ASTNode> params = createArgsListNode(ctx.argList());
         String name = ctx.IDENTIFIER().getText();
 
-        return new NewInstanceNode(name,params);
+        return new NewInstanceNode(name, params);
     }
 
-    public static MethodCallNode createMethodCallNode(MethodCallContext ctx){
+    public static MethodCallNode createMethodCallNode(MethodCallContext ctx) {
         List<ASTNode> params = createArgsListNode(ctx.argList());
         String name = ctx.IDENTIFIER().getText();
 
         return new MethodCallNode(name, params);
     }
 
-    public static List<ASTNode> createArgsListNode(ArgListContext ctx){
+    public static List<ASTNode> createArgsListNode(ArgListContext ctx) {
         List<ASTNode> args = new ArrayList<>();
 
-        if (ctx == null){
+        if (ctx == null) {
             return args;
         }
 
-        for (int i = 0; i < ctx.expr().size(); i++){
+        for (int i = 0; i < ctx.expr().size(); i++) {
             args.add(createExprNode(ctx.expr(i)));
         }
         return args;
     }
 
-    public static BlockNode createBlockNode(BlockContext ctx){
+    public static BlockNode createBlockNode(BlockContext ctx) {
         List<ASTNode> statments = new ArrayList<>();
-        for (int i = 0; i < ctx.statement().size(); i++){
+        for (int i = 0; i < ctx.statement().size(); i++) {
             statments.add(createASTNode(ctx.statement(i)));
         }
 
@@ -266,14 +227,14 @@ public class ASTGenerator {
 
     }
 
-    public static List<VarDeclNode> createParamsListNode(ParamListContext ctx){
+    public static List<VarDeclNode> createParamsListNode(ParamListContext ctx) {
         List<VarDeclNode> params = new ArrayList<>();
 
-        if(ctx == null){
+        if (ctx == null) {
             return params;
         }
 
-        for (int i = 0; i < ctx.type().size(); i++){
+        for (int i = 0; i < ctx.type().size(); i++) {
             vars.add(currentContext + "." + ctx.IDENTIFIER(i).getText());
             varTypes.add(ctx.type(i).getText());
             params.add(new VarDeclNode(ctx.type(i).getText(), ctx.IDENTIFIER(i).getText(), null));
@@ -282,7 +243,7 @@ public class ASTGenerator {
         return params;
     }
 
-    public static ConstructorNode createConstructorNode(ConstructorContext ctx){
+    public static ConstructorNode createConstructorNode(ConstructorContext ctx) {
         String blockContext = getNewBlockContext();
 
         currentContext = new Context(currentContext + "." + blockContext, currentContext);
@@ -290,21 +251,20 @@ public class ASTGenerator {
         List<VarDeclNode> params = createParamsListNode(ctx.paramList());
         BlockNode body = createBlockNode(ctx.block());
 
-
         currentContext = currentContext.getParent();
 
         return new ConstructorNode(params, body);
-        
+
     }
 
-    public static boolean isBool(String text){
+    public static boolean isBool(String text) {
         return text.equals("yes") || text.equals("no") || text.equals("true") || text.equals("false");
     }
 
-    public static <T> int getIndex(List<T> list, T value){
+    public static <T> int getIndex(List<T> list, T value) {
         int index = 0;
-        for (T v : list){
-            if(v.equals(value)){
+        for (T v : list) {
+            if (v.equals(value)) {
                 return index;
             }
             index++;
@@ -312,7 +272,7 @@ public class ASTGenerator {
         return -1;
     }
 
-    public static String getType(String varName, Context ctx){
+    public static String getType(String varName, Context ctx) {
         int index = getIndex(vars, ctx + "." + varName);
 
         while (index == -1) {
@@ -323,24 +283,24 @@ public class ASTGenerator {
         return varTypes.get(index);
     }
 
-    public static String getType(String varName){
+    public static String getType(String varName) {
         return getType(varName, currentContext);
     }
 
     public static ASTNode createTerminalNode(TerminalNode ctx) {
         String text = ctx.getText();
-        if (text.matches("\\d+")){
+        if (text.matches("\\d+")) {
             return new NumberNode(Integer.parseInt(text));
-        } else if (isBool(text)){
+        } else if (isBool(text)) {
             boolean value = text.equals("yes") || text.equals("true") || text.equals("on");
             return new BooleanNode(value);
-        } else if (text.contains("\"")){
+        } else if (text.contains("\"")) {
             return new StringNode(text);
         }
         return new IdentifierNode(text, getType(text));
     }
 
-    public static VarDeclNode createVarDeclNode(VarDeclContext ctx){
+    public static VarDeclNode createVarDeclNode(VarDeclContext ctx) {
         String type = ctx.getChild(0).getText();
 
         String name = ctx.IDENTIFIER().getText();
@@ -349,7 +309,7 @@ public class ASTGenerator {
 
         ASTNode value = null;
 
-        if (expr != null){
+        if (expr != null) {
             value = createASTNode(expr);
         }
 
@@ -357,14 +317,14 @@ public class ASTGenerator {
         varTypes.add(type);
 
         return new VarDeclNode(type, name, value);
-        
+
     }
 
-    public static void printProg(ProgramNode node){
+    public static void printProg(ProgramNode node) {
         System.out.println(node.toString(new Indent()));
     }
 
-    public static void printProg(ProgramNode node, String IndentType){
+    public static void printProg(ProgramNode node, String IndentType) {
         System.out.println(node.toString(new Indent(IndentType)));
     }
 

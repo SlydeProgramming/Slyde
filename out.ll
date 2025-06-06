@@ -9,17 +9,12 @@ define void @print(i8** %output){
 
 
 ; Class: Test
-%Test= type {i32, i32, i8*}
+%Test= type {i8*}
 
 define void @Test_constructor(%Test* %this) nounwind {
-	%hello = getelementptr %Test, %Test* %this, i32 0, i32 0
-	store i32 0, i32* %hello
-	%hi = getelementptr %Test, %Test* %this, i32 0, i32 1
-	%t0 = add i32 2, 2
-	store i32 %t0, i32* %hi
-	%hope = getelementptr %Test, %Test* %this, i32 0, i32 2
-	%t1 = alloca [13 x i8], align 1
-	%strVar0 = getelementptr [13 x i8], [13 x i8]* %t1, i32 0, i32 0
+	%test = getelementptr %Test, %Test* %this, i32 0, i32 0
+	%t0 = alloca [13 x i8], align 1
+	%strVar0 = getelementptr [13 x i8], [13 x i8]* %t0, i32 0, i32 0
 	store i8 72, i8* %strVar0
 	%strVar1 = getelementptr i8, i8* %strVar0, i32 1
 	store i8 101, i8* %strVar1
@@ -45,24 +40,14 @@ define void @Test_constructor(%Test* %this) nounwind {
 	store i8 33, i8* %strVar11
 	%strVar12 = getelementptr i8, i8* %strVar0, i32 12
 	store i8 0, i8* %strVar12
-	store i8* %strVar0, i8** %hope
-	call void @print(i8** %hope)
+	store i8* %strVar0, i8** %test
+	call void @print(i8** %test)
 	ret void
 }
 define void @main() {
-	%temp = alloca i32, align 1
-	%t2 = add i32 2, 2
-	store i32 %t2, i32* %temp
 	%test = alloca %Test, align 1
-	%t3 = alloca %Test
-	call void @Test_constructor(%Test* %t3)
-	store %Test* %t3, %Test* %test
-	br i1 1, label %label0, label %label1
-	label0:
-		store i32 3, i32* %temp
-		br label %label2
-	label1:
-		br label %label2
-	label2:
+	%t1 = alloca %Test
+	call void @Test_constructor(%Test* %t1)
+	store %Test* %t1, %Test* %test
 	ret void
 }
