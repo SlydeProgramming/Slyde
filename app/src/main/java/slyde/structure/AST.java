@@ -1,51 +1,19 @@
-package slyde.compiler;
+package slyde.structure;
 
 import java.util.ArrayList;
 import java.util.List;
 
+import slyde.utils.Indent;
+
 public class AST {
 
-    public static class Indent {
-        private int lvl = -3;
-        private String indentType = "  ";
-
-        public Indent() {
-            lvl = 0;
-        }
-
-        public Indent(String indentType) {
-            lvl = 0;
-            this.indentType = indentType;
-        }
-
-        public String get() {
-            String str = "";
-            for (int i = 0; i < lvl; i++) {
-                str += indentType;
-            }
-            return str;
-        }
-
-        public String up() {
-            lvl++;
-            return get();
-        }
-
-        public String down() {
-            lvl--;
-            return get();
-        }
-
-        @Override
-        public String toString() {
-            return get();
-        }
-    }
+    
 
     public static abstract class ASTNode {
         public abstract String toString(Indent lvl);
-
-        public abstract <T> void explode(MetaDataString<T> ctx);
+        public void alert(){
+            System.out.println("Unknown Alert location for node: " + this.getClass().getSimpleName());
+        }
     }
 
     public static class ProgramNode extends ASTNode {
@@ -70,11 +38,6 @@ public class AST {
             return str;
         }
 
-        @Override
-        public <T> void explode(MetaDataString<T> ctx) {
-            throw new UnsupportedOperationException(
-                    "Unexpected node exploded ctx: " + ctx.obj.toString());
-        }
 
     }
 
@@ -139,11 +102,7 @@ public class AST {
             return str;
         }
 
-        @Override
-        public <T> void explode(MetaDataString<T> ctx) {
-            throw new UnsupportedOperationException(
-                    "Unexpected node exploded ctx: " + ctx.obj.toString());
-        }
+
     }
 
     public static class NewInstanceNode extends Expr {

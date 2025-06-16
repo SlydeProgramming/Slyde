@@ -1,10 +1,11 @@
-package slyde.compiler;
+package slyde.generation;
 
 import org.antlr.v4.runtime.tree.ParseTree;
 import org.antlr.v4.runtime.tree.TerminalNode;
 
-import slyde.compiler.AST.*;
 import slyde.compiler.LP.SlydeParser.*;
+import slyde.structure.AST.*;
+import slyde.utils.Indent;
 
 import java.util.ArrayList;
 import java.util.List;

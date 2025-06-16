@@ -4,10 +4,13 @@ import org.antlr.v4.runtime.CharStream;
 import org.antlr.v4.runtime.CharStreams;
 import org.antlr.v4.runtime.CommonTokenStream;
 
-import slyde.compiler.AST.ProgramNode;
 import slyde.compiler.LP.SlydeLexer;
 import slyde.compiler.LP.SlydeParser;
 import slyde.compiler.LP.SlydeParser.ProgContext;
+import slyde.generation.ASTGenerator;
+import slyde.generation.LLVMGenerator;
+import slyde.structure.AST.ProgramNode;
+import slyde.utils.FileHandler;
 
 public class Compiler {
 

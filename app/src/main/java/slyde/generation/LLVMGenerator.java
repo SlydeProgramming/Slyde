@@ -1,9 +1,10 @@
-package slyde.compiler;
+package slyde.generation;
 
 import java.util.ArrayList;
 import java.util.List;
 
-import slyde.compiler.AST.*;
+import slyde.structure.AST.*;
+import slyde.utils.Indent;
 
 public class LLVMGenerator {
     private StringBuilder llvmCode;

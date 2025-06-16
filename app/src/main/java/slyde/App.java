@@ -6,10 +6,13 @@ package slyde;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 
+
 import slyde.compiler.Compiler;
 
 public class App {
     public static void main(String[] args) {
+
+
         if(args.length > 0){
 
 

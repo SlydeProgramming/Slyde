@@ -1,0 +1,124 @@
+package slyde.generation;
+
+import java.util.ArrayList;
+import java.util.List;
+
+import slyde.utils.Indent;
+
+public class MultiPartTextGenerator {
+    private Indent indent = new Indent("\t");
+    private StringBuilder textHead = new StringBuilder();
+    private StringBuilder text = new StringBuilder();
+    private StringBuilder textEnd = new StringBuilder();
+
+    public void appendHead(String str) {
+        textHead.append(str);
+    }
+
+    public void appendEnd(String str) {
+        textEnd.append(str);
+    }
+
+    public void append(String str) {
+        text.append(str);
+    }
+
+    public String end() {
+        return textHead.toString() + "\n" + text.toString() + "\n" + textEnd.toString();
+    }
+
+    public String up() {
+        return indent.up();
+    }
+
+    public String get() {
+        return indent.get();
+    }
+
+    public String down() {
+        return indent.down();
+    }
+
+    public StringBuilder getText() {
+        return text;
+    }
+
+    public StringBuilder getTextEnd() {
+        return textEnd;
+    }
+
+    public StringBuilder getTextHead() {
+        return textHead;
+    }
+
+    public void removeLastCharHead() {
+        textHead.deleteCharAt(textHead.toString().length() - 1);
+    }
+
+    public void removeLastChar() {
+        text.deleteCharAt(text.toString().length() - 1);
+    }
+
+    public void removeLastCharEnd() {
+        textEnd.deleteCharAt(textEnd.toString().length() - 1);
+
+    }
+
+    // == Methodheader overloads ==
+
+    public void addMethodHeader(String name, String retType, List<String> paramsList, boolean isSafe) {
+        append("define " + retType + " @" + name + "(");
+        if (!paramsList.isEmpty()) {
+            append(paramsList.get(0));
+            for (int i = 1; i < paramsList.size(); i++) {
+                append(", " + paramsList.get(i));
+            }
+        }
+        append(") " + (isSafe ? "nounwind" : "") + "  {");
+        up();
+    }
+
+    public void addMethodHeader(String name, String retType, List<String> paramsList) {
+        addMethodHeader(name, retType, paramsList, false);
+    }
+
+    public void addMethodHeader(String name, String retType) {
+        addMethodHeader(name, retType, new ArrayList<>());
+    }
+
+    public void addMethodHeader(String name) {
+        addMethodHeader(name, "void");
+    }
+
+    // =============================
+
+    public void addCommentHead(String str) {
+        appendHead(get() + ";  " + str + "\n");
+    }
+
+    public void addComment(String str) {
+        append(get() + ";  " + str + "\n");
+    }
+
+    public void addCommentEnd(String str) {
+        appendEnd(get() + ";  " + str + "\n");
+    }
+
+    @Override
+    public String toString() {
+        return indent.toString();
+    }
+
+    public static String getLLVMType(String type) {
+        return switch (type) {
+            case "int" -> "i32";
+            case "boolean" -> "i1";
+            case "void" -> "void";
+            case "double" -> "double";
+            case "float" -> "float";
+            case "String" -> "i8*";
+            default -> "%" + type;
+        };
+    }
+
+}
