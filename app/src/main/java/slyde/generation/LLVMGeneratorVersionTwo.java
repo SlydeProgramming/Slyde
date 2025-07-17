@@ -29,7 +29,7 @@ public class LLVMGeneratorVersionTwo {
 
             // class field content
             clas.getFields().forEach((field) -> {
-                codemanager.appendHead(MultiPartTextGenerator.getLLVMType(field.name));
+                codemanager.appendHead(MultiPartTextGenerator.getLLVMType(field.type));
                 codemanager.appendHead(",");
             });
 
@@ -142,6 +142,8 @@ public class LLVMGeneratorVersionTwo {
             // Generate code for each statement in the method body
             generateNodesArray(construct.body.statements, context);
 
+            codemanager.append(codemanager.get() + "ret void");
+
             // Close the method
             codemanager.down();
             codemanager.append("}\n\n");
@@ -165,6 +167,11 @@ public class LLVMGeneratorVersionTwo {
 
         generateNodesArray(main.body.statements, context);
 
+        codemanager.append(codemanager.get() + "ret void");
+
+        codemanager.down();
+        codemanager.append("}");
+
     }
 
     public static String generate(ProgramNode src) {
@@ -177,6 +184,6 @@ public class LLVMGeneratorVersionTwo {
 
         codemanager.addCommentEnd("============== EOF ===============");
 
-        return codemanager.toString();
+        return codemanager.end();
     }
 }

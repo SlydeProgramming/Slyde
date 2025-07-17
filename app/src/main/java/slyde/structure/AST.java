@@ -20,6 +20,8 @@ public class AST {
         public int line;
         public int column;
 
+        protected MultiPartTextGenerator cm = LLVMGeneratorVersionTwo.codemanager;
+
         public abstract String toString(Indent lvl);
 
         public <T> void gen(Context<T> ctx) {
@@ -178,6 +180,12 @@ public class AST {
             this.type = type;
             this.name = name;
             this.value = value;
+        }
+
+        @Override
+        public <T> void gen(Context<T> ctx) {
+            cm.append(cm.get() + "%obj = alloca %Test\n\n");
+            cm.append(cm.get() + "call void @Test_constructor(%Test* %obj)\n");
         }
 
         @Override
@@ -346,12 +354,17 @@ public class AST {
         public String value;
 
         public StringNode(String value) {
-            this.value = value;
+            value = value.replaceFirst("\"", "");
+            char[] cars = value.toCharArray();
+            String val = "";
+            for (int i = 0; i <= cars.length; i++) {
+                val += cars[i];
+            }
+            this.value = val.replace("\"", "\\\"");
         }
 
         @Override
         public <T> void gen(Context<T> ctx) {
-            MultiPartTextGenerator cm = LLVMGeneratorVersionTwo.codemanager;
             if (!Context.createdStrings.contains(value)) {
                 cm.appendHead("@" + value + " = private constant [" + (value.length() + 1) + " x i8] c\"" + value
                         + "\\00\"\n");
@@ -591,7 +604,6 @@ public class AST {
 
         @Override
         public <T> void gen(Context<T> ctx) {
-            MultiPartTextGenerator cm = LLVMGeneratorVersionTwo.codemanager;
             if (ctx.getHandleProtocol().equals(HandleProtocol.STANDALONE)) {
 
                 int i = 0;
