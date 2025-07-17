@@ -6,22 +6,26 @@ package slyde;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 
-
 import slyde.compiler.Compiler;
 
 public class App {
+
+    public static Path target;
+    public static Path interrupt;
+
     public static void main(String[] args) {
 
+        if (args.length > 0) {
 
-        if(args.length > 0){
-
+            interrupt = Paths.get("interruption_output.ll").toAbsolutePath();
 
             Path filePath1 = Paths.get(args[0]).toAbsolutePath();
+            target = filePath1;
             Path filePath2 = Paths.get("out.ll").toAbsolutePath();
-            if (args.length > 1){
+            if (args.length > 1) {
                 filePath2 = Paths.get(args[1]).toAbsolutePath();
             }
-            
+
             Compiler.compile(filePath1.toString(), filePath2.toString());
         } else {
             System.err.println("Error: No File path provided");

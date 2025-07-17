@@ -26,8 +26,6 @@ public class Compiler {
 
             ProgramNode prog = ASTGenerator.generateAST(tree);
 
-            LLVMGenerator generator = new LLVMGenerator();
-
             FileHandler.writeFile(outPath, LLVMGeneratorVersionTwo.generate(prog));
 
         } catch (Exception e) {

@@ -10,6 +10,7 @@ import slyde.context.HandleProtocol;
 import slyde.context.Context;
 import slyde.generation.LLVMGeneratorVersionTwo;
 import slyde.generation.MultiPartTextGenerator;
+import slyde.utils.ErrorHandler;
 import slyde.utils.Indent;
 
 public class AST {
@@ -19,6 +20,7 @@ public class AST {
     public static abstract class ASTNode {
         public int line;
         public int column;
+        static int tI = 0;
 
         protected MultiPartTextGenerator cm = LLVMGeneratorVersionTwo.codemanager;
 
@@ -26,10 +28,11 @@ public class AST {
 
         public <T> void gen(Context<T> ctx) {
 
-            System.out.println(LLVMGeneratorVersionTwo.codemanager.end());
-
-            throw new Error("Unknown Alert location for node: " + this.getClass().getSimpleName() + "\n located at "
-                    + line + " , " + column);
+            ErrorHandler.error(
+                    "Unknown Generation protocol " + ctx.getHandleProtocol() + " for node: "
+                            + this.getClass().getSimpleName(),
+                    line,
+                    column);
         }
 
         @SuppressWarnings("unchecked")
@@ -132,10 +135,41 @@ public class AST {
     public static class NewInstanceNode extends Expr {
         public String name;
         public List<ASTNode> args;
+        public static List<String[]> objects = new ArrayList<>();
 
         public NewInstanceNode(String name, List<ASTNode> args) {
             this.name = name;
             this.args = args;
+        }
+
+        @Override
+        public <T> void gen(Context<T> ctx) {
+            if (ctx.is(HandleProtocol.GET)) {
+
+                String varName = ctx.getRequestName();
+
+                int insttI = tI++;
+
+                cm.append(cm.get() + "%size_ptr_" + insttI + " = getelementptr %" + name + ", %" + name
+                        + "* null, i32 1\n");
+
+                cm.append(
+                        cm.get() + "%size_" + insttI + " = ptrtoint %" + name + "* %size_ptr_" + insttI + " to i64\n");
+
+                cm.append(cm.get() + "%" + varName + "_typed = call i8* @malloc(i64 %size_" + insttI + ")\n");
+
+                cm.append(cm.get() + "%" + varName + " = bitcast i8* %" + varName + "_typed to %" + name + "*\n");
+
+                cm.append(cm.get() + "call void @" + name + "_constructor(%" + name + "* %" + varName + "_typed)\n");
+
+                ctx.setReturnValues("%" + varName, "%" + name + "*");
+
+                objects.add(new String[] { "%" + varName, "%" + name + "*" });
+
+            } else {
+                ErrorHandler.warn("Warning new instance of " + name
+                        + " created but its value is never stored", line, column);
+            }
         }
 
         @Override
@@ -184,8 +218,27 @@ public class AST {
 
         @Override
         public <T> void gen(Context<T> ctx) {
-            cm.append(cm.get() + "%obj = alloca %Test\n\n");
-            cm.append(cm.get() + "call void @Test_constructor(%Test* %obj)\n");
+            if (ctx.is(HandleProtocol.STANDALONE)) {
+
+                ctx
+                        .requestName(ctx.getContextName() + name)
+                        .setHandleProtocol(HandleProtocol.GET);
+
+                value.gen(ctx);
+
+                String actualName = (ctx.getContextName() + name)
+                        .equals(ctx.findReturnedName(ctx.getContextName() + name))
+                        || ("%" + ctx.getContextName() + name)
+                                .equals(ctx.findReturnedName(ctx.getContextName() + name)) ? null
+                                        : ctx.getContextName() + name;
+
+                if (actualName != null) {
+                    cm.append(cm.get() + "%" + actualName + " = "
+                            + ctx.findReturnedType(ctx.getContextName() + name) + " "
+                            + ctx.findReturnedName(ctx.getContextName() + name));
+                }
+
+            }
         }
 
         @Override
@@ -357,7 +410,7 @@ public class AST {
             value = value.replaceFirst("\"", "");
             char[] cars = value.toCharArray();
             String val = "";
-            for (int i = 0; i <= cars.length; i++) {
+            for (int i = 0; i < cars.length - 1; i++) {
                 val += cars[i];
             }
             this.value = val.replace("\"", "\\\"");
@@ -366,14 +419,15 @@ public class AST {
         @Override
         public <T> void gen(Context<T> ctx) {
             if (!Context.createdStrings.contains(value)) {
-                cm.appendHead("@" + value + " = private constant [" + (value.length() + 1) + " x i8] c\"" + value
+
+                cm.appendHead("@\"" + value + "\" = private constant [" + (value.length() + 1) + " x i8] c\"" + value
                         + "\\00\"\n");
                 Context.createdStrings.add(value);
             }
 
             if (ctx.is(HandleProtocol.GET)) {
                 cm.append(cm.get() + "%" + ctx.getRequestName() + " = getelementptr inbounds [" + (value.length() + 1)
-                        + " x i8], [" + (value.length() + 1) + " x i8]* @" + value + ", i32 0, i32 0\n");
+                        + " x i8], [" + (value.length() + 1) + " x i8]* @\"" + value + "\", i32 0, i32 0\n");
                 ctx.setReturnValues("%" + ctx.getRequestName(), "i8*");
             }
 
@@ -390,6 +444,17 @@ public class AST {
 
         public BooleanNode(Boolean value) {
             this.value = value;
+        }
+
+        @Override
+        public <T> void gen(Context<T> ctx) {
+            if (ctx.is(HandleProtocol.GET)) {
+                cm.append(cm.get() + "%" + ctx.getRequestName() + " = alloca i1\n");
+                cm.append(cm.get() + "store i1 " + (value ? "1" : "0") + ", i1* %" + ctx.getRequestName() + "\n");
+                ctx.setReturnValues('%' + ctx.getRequestName(), "i1*");
+            } else {
+                ErrorHandler.warn("Boolean " + ctx.getContextName() + " is never stored", line, column);
+            }
         }
 
         @Override
@@ -459,6 +524,154 @@ public class AST {
         }
 
         @Override
+        public <T> void gen(Context<T> ctx) {
+
+            if (ctx.is(HandleProtocol.GET)) {
+
+                int ltI = tI++;
+                int rtI = tI++;
+                String retName = ctx.getRequestName();
+                ctx
+                        .setHandleProtocol(HandleProtocol.GET)
+                        .requestName(ctx.getContextName() + "condOp_" + ltI);
+
+                left.gen(ctx);
+
+                ctx
+                        .setHandleProtocol(HandleProtocol.GET)
+                        .requestName(ctx.getContextName() + "condOp_" + rtI);
+
+                right.gen(ctx);
+
+                ctx.requestName(retName);
+
+                String lName = ctx.findReturnedName(ctx.getContextName() + "condOp_" + ltI);
+                String lType = ctx.findReturnedType(ctx.getContextName() + "condOp_" + ltI);
+                String rName = ctx.findReturnedName(ctx.getContextName() + "condOp_" + rtI);
+                String rType = ctx.findReturnedType(ctx.getContextName() + "condOp_" + rtI);
+
+                String result = "%" + retName;
+                String cmpOp;
+
+                if (lType.equals("i32*") || lType.equals("i1*")) {
+                    lName = cm.load(ctx.getContextName(), lType == "i32*" ? "i32" : "i1", lName);
+                    lType = lType == "i32*" ? "i32" : "i1";
+                }
+
+                if (rType.equals("i32*") || rType.equals("i1*")) {
+                    rName = cm.load(ctx.getContextName(), rType == "i32*" ? "i32" : "i1", rName);
+                    rType = rType == "i32*" ? "i32" : "i1";
+                }
+
+                if (lType.equals("i32") || lType.equals("i1")) {
+
+                    boolean special = false;
+
+                    // Integer/Boolean comparison
+                    switch (operator) {
+                        case "==":
+                            cmpOp = "eq";
+                            break;
+                        case "!=":
+                            cmpOp = "ne";
+                            break;
+                        case "<":
+                            cmpOp = "slt";
+                            break;
+                        case "<=":
+                            cmpOp = "sle";
+                            break;
+                        case ">":
+                            cmpOp = "sgt";
+                            break;
+                        case ">=":
+                            cmpOp = "sge";
+                            break;
+                        case "&&":
+                            cmpOp = "and";
+                            special = true;
+                            break;
+                        case "||":
+                            cmpOp = "or";
+                            special = true;
+                            break;
+                        default:
+                            ErrorHandler.error("Unknown operator: " + operator, line, column);
+                            return;
+                    }
+
+                    if (special && !lType.equals("i1")) {
+                        ErrorHandler.error("Logical operators '&&' and '||' require boolean operands (i1)", line,
+                                column);
+                        return;
+                    }
+
+                    if (special) {
+                        cm.append(cm.get() + result + " = " + cmpOp + " " + lType + " " + lName + ", " + rName + "\n");
+                    } else {
+                        cm.append(cm.get() + result + " = icmp " + cmpOp + " " + lType + " " + lName + ", " + rName
+                                + "\n");
+                    }
+
+                } else if (lType.equals("double")) {
+                    // Floating-point comparison
+                    switch (operator) {
+                        case "==":
+                            cmpOp = "oeq";
+                            break;
+                        case "!=":
+                            cmpOp = "one";
+                            break;
+                        case "<":
+                            cmpOp = "olt";
+                            break;
+                        case "<=":
+                            cmpOp = "ole";
+                            break;
+                        case ">":
+                            cmpOp = "ogt";
+                            break;
+                        case ">=":
+                            cmpOp = "oge";
+                            break;
+                        default:
+                            ErrorHandler.error("Unknown operator: " + operator, line, column);
+                            return;
+                    }
+                    cm.append(cm.get() + result + " = fcmp " + cmpOp + " double " + lName + ", " + rName + "\n");
+
+                } else if (lType.equals("i8*")) {
+                    // String comparison using custom function
+                    switch (operator) {
+                        case "==":
+                            cm.append(cm.get() + result + " = call i1 @slyde_str_eq(i8* " + lName + ", i8* " + rName
+                                    + ")\n");
+                            break;
+                        case "!=":
+                            String temp = "%" + ctx.getContextName() + "compareResult_" + tI++;
+                            cm.append(cm.get() + temp + " = call i1 @slyde_str_eq(i8* " + lName + ", i8* " + rName
+                                    + ")\n");
+                            cm.append(cm.get() + result + " = xor i1 " + temp + ", true\n");
+                            break;
+                        default:
+                            ErrorHandler.error("Unsupported string comparison operator: " + operator, line, column);
+                            return;
+                    }
+
+                } else {
+                    ErrorHandler.error("Unsupported operand types: " + lType + ", " + rType, line, column);
+                    return;
+                }
+
+                ctx.setReturnValues(result, "i1");
+
+            } else {
+                ErrorHandler.warn("Conditional statment not stored", line, column);
+            }
+
+        }
+
+        @Override
         public String toString(Indent lvl) {
             String str = "";
 
@@ -506,6 +719,85 @@ public class AST {
             this.condition = condition;
             this.trueBranch = trueBranch;
             this.falseBranch = falseBranch;
+        }
+
+        @Override
+        public <T> void gen(Context<T> ctx) {
+
+            if (ctx.is(HandleProtocol.STANDALONE)) {
+                int cTi = tI;
+
+                ctx
+                        .setHandleProtocol(HandleProtocol.GET)
+                        .requestName(ctx.getContextName() + "condition_" + tI);
+
+                tI++;
+                condition.gen(ctx);
+
+                String rT = ctx.findReturnedType(ctx.getContextName() + "condition_" + cTi);
+                String val;
+                if (rT.equals("i1*")) {
+                    val = cm.load(ctx.getContextName(), "i1", ctx.findReturnedName(
+                            ctx.getContextName() + "condition_" + cTi));
+                } else if (rT.equals("i1")) {
+                    val = ctx.findReturnedName(ctx.getContextName() + "condition_" + cTi);
+                } else {
+                    ErrorHandler.error("Invalid conditional type cannot evaluate " + rT + " as a boolean", line,
+                            column);
+                    return; // error thrown above so this is just here to stop java from complaing about val
+                }
+
+                int b1 = tI++;
+                int b2 = tI++;
+                int b3 = tI++;
+                cm.append(cm.get() + "br i1 " + val + ", label %label" + b1 + ", label %label" + b2 + "\n");
+
+                cm.createLabel(b1);
+
+                cm.up();
+
+                ctx
+                        .setHandleProtocol(HandleProtocol.STANDALONE)
+                        .addContextName("ifStm" + b1);
+
+                for (ASTNode node : trueBranch.statements) {
+                    if (node != null) {
+                        ctx.setHandleProtocol(HandleProtocol.STANDALONE);
+                        node.gen(ctx);
+                    }
+                }
+
+                cm.append(cm.get() + "br label %label" + b3 + "\n");
+
+                cm.down();
+                ctx.popContext();
+
+                if (falseBranch != null) {
+                    cm.createLabel(b2);
+                    cm.up();
+
+                    ctx.addContextName("ifStm" + b2);
+
+                    for (ASTNode node : falseBranch.statements) {
+                        if (node != null) {
+                            ctx.setHandleProtocol(HandleProtocol.STANDALONE);
+                            node.gen(ctx);
+                        }
+                    }
+
+                    cm.append(cm.get() + "br label %label" + b3 + "\n");
+
+                    cm.down();
+                    ctx.popContext();
+
+                }
+
+                cm.createLabel(b3);
+
+            } else {
+                ErrorHandler.error("Attempted to store an if statment??????", line, column);
+            }
+
         }
 
         @Override
@@ -596,6 +888,7 @@ public class AST {
     public static class MethodCallNode extends Expr {
         public String methodName;
         public List<ASTNode> arguments;
+        static int tI = 0;
 
         public MethodCallNode(String methodName, List<ASTNode> arguments) {
             this.methodName = methodName;
@@ -606,19 +899,24 @@ public class AST {
         public <T> void gen(Context<T> ctx) {
             if (ctx.getHandleProtocol().equals(HandleProtocol.STANDALONE)) {
 
+                List<Integer> tIs = new ArrayList<>();
+
                 int i = 0;
                 for (ASTNode node : arguments) {
                     ctx
-                            .requestName(methodName + "_" + node.getClass().getSimpleName() + "_" + i)
+                            .requestName(methodName + "_" + node.getClass().getSimpleName() + "_" + tI)
                             .setHandleProtocol(HandleProtocol.GET);
                     node.gen(ctx);
+                    tIs.add(tI);
+                    tI++;
                     i++;
                 }
 
                 cm.append(cm.get() + "call void @" + methodName + "(");
 
                 for (int j = 0; j < i; j++) {
-                    String lookUp = methodName + "_" + arguments.get(j).getClass().getSimpleName() + "_" + j;
+                    String lookUp = methodName + "_" + arguments.get(j).getClass().getSimpleName() + "_"
+                            + tIs.get(j);
                     String name = ctx.findReturnedName(lookUp);
                     String type = ctx.findReturnedType(lookUp);
                     cm.append(type + " " + name + ",");

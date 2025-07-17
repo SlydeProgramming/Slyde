@@ -11,6 +11,7 @@ public class MultiPartTextGenerator {
     private StringBuilder textHead = new StringBuilder();
     private StringBuilder text = new StringBuilder();
     private StringBuilder textEnd = new StringBuilder();
+    private int loaded = 0;
 
     public void appendHead(String str) {
         textHead.append(str);
@@ -116,6 +117,16 @@ public class MultiPartTextGenerator {
         }
     }
 
+    public String load(String ctxName, String requestType, String ptr) {
+        append(get() + "%temp_" + loaded + " = load " + requestType + ", " + requestType + "* " + ptr + "\n");
+
+        return "%temp_" + loaded++;
+    }
+
+    public void createLabel(int id) {
+        append(get() + "label" + id + ":\n");
+    }
+
     public void addCommentHead(String str) {
         appendHead(get() + ";  " + str + "\n");
     }
@@ -139,7 +150,6 @@ public class MultiPartTextGenerator {
             case "boolean" -> "i1";
             case "void" -> "void";
             case "double" -> "double";
-            case "float" -> "float";
             case "String" -> "i8*";
             default -> "%" + type;
         };

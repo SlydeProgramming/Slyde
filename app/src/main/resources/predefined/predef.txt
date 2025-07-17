@@ -1,0 +1,41 @@
+declare i32 @puts(i8*)
+
+declare noalias i8* @malloc(i64)
+
+declare void @free(i8*)
+
+define void @print(i8* %str) {
+    call i32 @puts(i8* %str)
+    ret void
+}
+
+define i1 @slyde_str_eq(i8* %a, i8* %b) {
+    entry:
+        br label %loop
+
+    loop:
+        %a_char_ptr = phi i8* [ %a, %entry ], [ %a_next, %loop_body ]
+        %b_char_ptr = phi i8* [ %b, %entry ], [ %b_next, %loop_body ]
+
+        %a_char = load i8, i8* %a_char_ptr
+        %b_char = load i8, i8* %b_char_ptr
+
+        %chars_equal = icmp eq i8 %a_char, %b_char
+        br i1 %chars_equal, label %check_end, label %not_equal
+
+    check_end:
+        %is_end = icmp eq i8 %a_char, 0
+        br i1 %is_end, label %equal, label %loop_body
+
+    loop_body: 
+        %a_next = getelementptr i8, i8* %a_char_ptr, i32 1
+        %b_next = getelementptr i8, i8* %b_char_ptr, i32 1
+        br label %loop
+
+    not_equal:
+        ret i1 0
+
+    equal:
+        ret i1 1
+}
+

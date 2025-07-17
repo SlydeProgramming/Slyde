@@ -1,17 +1,18 @@
-
-
 class Test{
 
-    String test = "Hello World!";
-
     constructor(){
-        print(test);
+        print("Yay the constructor works");
     }
+    
 }
 
 
 main(){
     Test test = new Test();
+    boolean amIStraight = yes;
+    if (amIStraight && true){
+        print("yayayayaya");
+    } else {
+        print("aw mannn");
+    }
 }
-
-

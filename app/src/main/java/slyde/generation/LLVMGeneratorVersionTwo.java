@@ -1,5 +1,8 @@
 package slyde.generation;
 
+import java.io.IOException;
+import java.io.InputStream;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -12,11 +15,18 @@ public class LLVMGeneratorVersionTwo {
     public static MultiPartTextGenerator codemanager = new MultiPartTextGenerator();
 
     private static void createPreDefinedMethods() {
-        codemanager.appendHead("declare i32 @puts(i8*)\n\n");
-        codemanager.appendHead("define void @print(i8* %str) {\n");
-        codemanager.appendHead("   call i32 @puts(i8* %str)\n");
-        codemanager.appendHead("   ret void\n");
-        codemanager.appendHead("}\n\n");
+
+        try (InputStream is = LLVMGeneratorVersionTwo.class.getResourceAsStream("/predefined/predef.txt")) {
+            if (is == null) {
+                System.out.println("Resource not found!");
+                return;
+            }
+            String content = new String(is.readAllBytes(), StandardCharsets.UTF_8);
+            codemanager.appendHead(content);
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+
     }
 
     private static void generateClasses(List<ClassNode> nodes) {
@@ -28,14 +38,15 @@ public class LLVMGeneratorVersionTwo {
             codemanager.appendHead("%" + classIdentifier + " = type {");
 
             // class field content
-            clas.getFields().forEach((field) -> {
-                codemanager.appendHead(MultiPartTextGenerator.getLLVMType(field.type));
-                codemanager.appendHead(",");
-            });
+            if (clas.getFields() != null) {
+                clas.getFields().forEach((field) -> {
+                    codemanager.appendHead(MultiPartTextGenerator.getLLVMType(field.type));
+                    codemanager.appendHead(",");
+                });
 
-            codemanager.removeLastCharHead();
+                codemanager.removeLastCharHead();
+            }
             codemanager.appendHead("}\n");
-
             // Class body (methods)
             codemanager.addComment("============== " + classIdentifier + " ===============");
 
@@ -101,42 +112,45 @@ public class LLVMGeneratorVersionTwo {
                     .addContextName("constructor");
 
             // load all of the fields so they can be accsessed in the body
-            int fieldIndex = 0;
-            for (VarDeclNode field : fields) {
+            if (fields != null) {
+                int fieldIndex = 0;
+                for (VarDeclNode field : fields) {
 
-                String fieldName = field.name;
+                    String fieldName = field.name;
 
-                // Get pointer to the field inside the struct
-                String ptrName = "%ptr_" + fieldName;
-                codemanager.append(codemanager.get() +
-                        String.format("  %s = getelementptr inbounds %%%s, %%%s* %%this, i32 0, i32 %d\n",
-                                ptrName, classIdentifier, classIdentifier, fieldIndex));
-
-                fieldIndex++;
-            }
-
-            // set field to default value if set
-            for (VarDeclNode field : fields) {
-                if (field.value != null) {
-                    // Generate code to evaluate the expression
-                    context
-                            .setHandleProtocol(HandleProtocol.GET)
-                            .requestName(context.getContextName() + field.name);
-                    field.value.gen(context); // should return a %reg
-                    String valueRegister = context.findReturnedName(context.getContextName() + field.name);
-
-                    // Store the result in the field
-                    String fieldPtr = "%ptr_" + field.name;
+                    // Get pointer to the field inside the struct
+                    String ptrName = "%ptr_" + fieldName;
                     codemanager.append(codemanager.get() +
-                            "store " + MultiPartTextGenerator.getLLVMType(field.type) + " " + valueRegister + ", " +
-                            MultiPartTextGenerator.getLLVMType(field.type) + "* " + fieldPtr);
+                            String.format("  %s = getelementptr inbounds %%%s, %%%s* %%this, i32 0, i32 %d\n",
+                                    ptrName, classIdentifier, classIdentifier, fieldIndex));
 
-                    // Load the field value
-                    String llvmFieldType = MultiPartTextGenerator.getLLVMType(field.type);
-                    String loadedName = "%val_" + field.name;
-                    codemanager.append(String.format("  %s = load %s, %s* %s\n",
-                            loadedName, llvmFieldType, llvmFieldType, "%ptr_" + field.name));
+                    fieldIndex++;
                 }
+
+                // set field to default value if set
+                for (VarDeclNode field : fields) {
+                    if (field.value != null) {
+                        // Generate code to evaluate the expression
+                        context
+                                .setHandleProtocol(HandleProtocol.GET)
+                                .requestName(context.getContextName() + field.name);
+                        field.value.gen(context); // should return a %reg
+                        String valueRegister = context.findReturnedName(context.getContextName() + field.name);
+
+                        // Store the result in the field
+                        String fieldPtr = "%ptr_" + field.name;
+                        codemanager.append(codemanager.get() +
+                                "store " + MultiPartTextGenerator.getLLVMType(field.type) + " " + valueRegister + ", " +
+                                MultiPartTextGenerator.getLLVMType(field.type) + "* " + fieldPtr);
+
+                        // Load the field value
+                        String llvmFieldType = MultiPartTextGenerator.getLLVMType(field.type);
+                        String loadedName = "%val_" + field.name;
+                        codemanager.append(String.format("  %s = load %s, %s* %s\n",
+                                loadedName, llvmFieldType, llvmFieldType, "%ptr_" + field.name));
+                    }
+                }
+
             }
 
             // Generate code for each statement in the method body
@@ -163,14 +177,29 @@ public class LLVMGeneratorVersionTwo {
         codemanager.addComment("============== Main Method ===============");
         codemanager.addMethodHeader("main");
 
-        Context<MainNode> context = new Context<MainNode>().setObj(main);
+        Context<MainNode> context = new Context<MainNode>()
+                .setObj(main)
+                .setHandleProtocol(HandleProtocol.STANDALONE)
+                .addContextName("main");
 
         generateNodesArray(main.body.statements, context);
 
-        codemanager.append(codemanager.get() + "ret void");
+        codemanager.addComment("============== Memory Managment ===============");
+
+        for (String[] var : NewInstanceNode.objects) {
+
+            codemanager.append(
+                    codemanager.get() + "%ptr_cast_" + var[0].replace("%", "_") + " = bitcast " + var[1] + " " + var[0]
+                            + " to i8*\n");
+            codemanager.append(
+                    codemanager.get() + "call void @free(i8* " + "%ptr_cast_" + var[0].replace("%", "_") + ")\n");
+
+        }
+
+        codemanager.append(codemanager.get() + "ret void\n");
 
         codemanager.down();
-        codemanager.append("}");
+        codemanager.append("}\n");
 
     }
 

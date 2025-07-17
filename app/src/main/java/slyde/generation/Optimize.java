@@ -1,8 +1,13 @@
 package slyde.generation;
 
 import slyde.structure.AST.BinaryOpNode;
+import slyde.structure.AST.BooleanNode;
+import slyde.structure.AST.ConditionalOp;
+import slyde.structure.AST.DoubleNode;
 import slyde.structure.AST.Expr;
 import slyde.structure.AST.NumberNode;
+import slyde.structure.AST.StringNode;
+import slyde.utils.ErrorHandler;
 
 public class Optimize {
 
@@ -93,6 +98,107 @@ public class Optimize {
 
         // Not fully constant — can't evaluate
         return null;
+    }
+
+    public static Expr attemptCalcConditional(ConditionalOp node, int l, int c) {
+        // Recursively simplify left and right first
+        Expr leftSimplified = simplifyExpr(node.left, l, c);
+        Expr rightSimplified = simplifyExpr(node.right, l, c);
+
+        var leftVal = extractValue(leftSimplified);
+        var rightVal = extractValue(rightSimplified);
+
+        if (leftVal != null && rightVal != null) {
+            // Evaluate condition and return BooleanNode
+            Boolean result = evaluateConditionalOp(leftVal, node.operator, rightVal, l, c);
+            if (result != null) {
+                return new BooleanNode(result);
+            }
+        }
+
+        // Return simplified conditional if no full evaluation possible
+        return new ConditionalOp(leftSimplified, rightSimplified, node.operator);
+    }
+
+    private static Expr simplifyExpr(Expr expr, int l, int c) {
+        if (expr instanceof ConditionalOp) {
+            return attemptCalcConditional((ConditionalOp) expr, l, c);
+        } else if (expr instanceof BinaryOpNode) {
+            // Use your numeric optimizer to simplify arithmetic inside conditionals
+            return Optimize.attemptCalc((BinaryOpNode) expr);
+        } else {
+            return expr; // No simplification possible
+        }
+    }
+
+    private static Object extractValue(Expr expr) {
+        if (expr instanceof NumberNode) {
+            return ((NumberNode) expr).value;
+        } else if (expr instanceof StringNode) {
+            return ((StringNode) expr).value;
+        } else if (expr instanceof DoubleNode) {
+            return ((DoubleNode) expr).value;
+        } else if (expr instanceof BooleanNode) {
+            return ((BooleanNode) expr).value;
+        }
+        // Optional: could support more literal types here if you want
+        return null;
+    }
+
+    private static Boolean evaluateConditionalOp(Object left, String operator, Object right, int l, int c) {
+
+        if (left instanceof String || right instanceof String) {
+            switch (operator) {
+                case "==":
+                    return left.equals(right);
+                case "!=":
+                    return !left.equals(right);
+                default:
+                    ErrorHandler.error("Invalid operation " + operator + "for values " + left + " and " + right, l, c);
+                    return null;
+            }
+        } else if (left instanceof Integer || left instanceof Double || right instanceof Integer
+                || left instanceof Double) {
+            double lv = (double) left;
+            double r = (double) right;
+            switch (operator) {
+                case "==":
+                    return lv == r;
+                case "!=":
+                    return lv != r;
+                case "<":
+                    return lv < r;
+                case ">":
+                    return lv > r;
+                case "<=":
+                    return lv <= r;
+                case ">=":
+                    return lv >= r;
+                default:
+                    ErrorHandler.error("Invalid operation " + operator + "for values " + left + " and " + right, l, c);
+                    return null;
+            }
+        } else if (left instanceof Boolean || right instanceof Boolean) {
+            boolean lv = (boolean) left;
+            boolean r = (boolean) right;
+            switch (operator) {
+                case "==":
+                    return lv == r;
+                case "!=":
+                    return lv != r;
+                case "||":
+                    return lv || r;
+                case "&&":
+                    return lv && r;
+                default:
+                    ErrorHandler.error("Invalid operation " + operator + "for values " + left + " and " + right, l, c);
+                    return null;
+            }
+        }
+
+        ErrorHandler.error("Invalid operation " + operator + "for values " + left + " and " + right, l, c);
+        return null;
+
     }
 
 }

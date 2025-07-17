@@ -59,9 +59,8 @@ public class Context<T> {
         return metaData.contextNames.get(index);
     }
 
-    public Context<T> popContext() {
-        metaData.contextNames.removeLast();
-        return this;
+    public String popContext() {
+        return metaData.contextNames.removeLast();
     }
 
     public String findReturnedName(String requestName) {

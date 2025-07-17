@@ -185,7 +185,8 @@ public class ASTGenerator {
             if (ctx.binOp() != null) {
                 return Optimize.attemptCalc(new BinaryOpNode(left, operator, right)).setPosition(ctx);
             } else if (ctx.compareOp() != null) {
-                return new ConditionalOp(left, right, operator).setPosition(ctx);
+                return Optimize.attemptCalcConditional(new ConditionalOp(left, right, operator),
+                        ctx.getStart().getLine(), ctx.getStart().getCharPositionInLine()).setPosition(ctx);
             }
         }
 
@@ -260,7 +261,8 @@ public class ASTGenerator {
     }
 
     public static boolean isBool(String text) {
-        return text.equals("yes") || text.equals("no") || text.equals("true") || text.equals("false");
+        return text.equals("yes") || text.equals("no") || text.equals("true") || text.equals("false")
+                || text.equals("on") || text.equals("off");
     }
 
     public static <T> int getIndex(List<T> list, T value) {
