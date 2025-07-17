@@ -3,6 +3,7 @@ package slyde.generation;
 import java.util.ArrayList;
 import java.util.List;
 
+import slyde.structure.AST.VarDeclNode;
 import slyde.utils.Indent;
 
 public class MultiPartTextGenerator {
@@ -91,6 +92,29 @@ public class MultiPartTextGenerator {
     }
 
     // =============================
+
+    public void methodBodySetup(List<VarDeclNode> fields, String classIdentifier) {
+        if (fields != null) {
+            int fieldIndex = 0;
+            for (VarDeclNode field : fields) {
+                String llvmFieldType = MultiPartTextGenerator.getLLVMType(field.type);
+                String fieldName = field.name;
+
+                // Get pointer to the field inside the struct
+                String ptrName = "%ptr_" + fieldName;
+                append(
+                        String.format("  %s = getelementptr inbounds %%%s, %%%s* %%this, i32 0, i32 %d\n",
+                                ptrName, classIdentifier, classIdentifier, fieldIndex));
+
+                // Load the field value
+                String loadedName = "%val_" + fieldName;
+                append(String.format("  %s = load %s, %s* %s\n",
+                        loadedName, llvmFieldType, llvmFieldType, ptrName));
+
+                fieldIndex++;
+            }
+        }
+    }
 
     public void addCommentHead(String str) {
         appendHead(get() + ";  " + str + "\n");

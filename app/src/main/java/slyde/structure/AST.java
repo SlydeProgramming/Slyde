@@ -3,16 +3,36 @@ package slyde.structure;
 import java.util.ArrayList;
 import java.util.List;
 
+import org.antlr.v4.runtime.ParserRuleContext;
+import org.antlr.v4.runtime.Token;
+
 import slyde.utils.Indent;
+import slyde.utils.MetaDataString;
 
 public class AST {
 
-    
+    public static ProgramNode storage;
 
     public static abstract class ASTNode {
+        public int line;
+        public int column;
+
         public abstract String toString(Indent lvl);
-        public void alert(){
-            System.out.println("Unknown Alert location for node: " + this.getClass().getSimpleName());
+
+        public <T> void gen(MetaDataString<T> ctx) {
+
+            System.out.println(ctx.getStringManager().end());
+
+            throw new Error("Unknown Alert location for node: " + this.getClass().getSimpleName() + "\n located at "
+                    + line + " , " + column);
+        }
+
+        @SuppressWarnings("unchecked")
+        public <T> T setPosition(ParserRuleContext ctx) {
+            Token s = ctx.getStart();
+            this.line = s.getLine();
+            this.column = s.getCharPositionInLine();
+            return (T) this;
         }
     }
 
@@ -23,6 +43,7 @@ public class AST {
         public ProgramNode(List<ClassNode> classes, MainNode main) {
             this.classes = classes;
             this.main = main;
+            storage = this;
         }
 
         @Override
@@ -37,7 +58,6 @@ public class AST {
 
             return str;
         }
-
 
     }
 
@@ -101,7 +121,6 @@ public class AST {
             lvl.down();
             return str;
         }
-
 
     }
 
@@ -376,20 +395,6 @@ public class AST {
 
     }
 
-    public static class FloatNode extends LiteralNode {
-        public float value;
-
-        public FloatNode(float value) {
-            this.value = value;
-        }
-
-        @Override
-        public String toString(Indent lvl) {
-            return lvl.get() + "Float: " + value;
-        }
-
-    }
-
     public static class NumberNode extends LiteralNode {
         public int value;
 
@@ -556,6 +561,11 @@ public class AST {
         public MethodCallNode(String methodName, List<ASTNode> arguments) {
             this.methodName = methodName;
             this.arguments = arguments;
+        }
+
+        @Override
+        public <T> void gen(MetaDataString<T> ctx) {
+
         }
 
         @Override

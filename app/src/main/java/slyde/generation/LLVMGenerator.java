@@ -289,8 +289,6 @@ public class LLVMGenerator {
     private String generateExpression(ASTNode expr) {
         if (expr instanceof NumberNode) {
             return Integer.toString(((NumberNode) expr).value);
-        } else if (expr instanceof FloatNode) {
-            return Float.toString(((FloatNode) expr).value);
         } else if (expr instanceof DoubleNode) {
             return Double.toString(((DoubleNode) expr).value);
         } else if (expr instanceof BinaryOpNode) {
@@ -316,8 +314,6 @@ public class LLVMGenerator {
     private String[] generateExpression(ASTNode expr, boolean getType) {
         if (expr instanceof NumberNode) {
             return new String[] { Integer.toString(((NumberNode) expr).value), getLLVMType("int") };
-        } else if (expr instanceof FloatNode) {
-            return new String[] { Float.toString(((FloatNode) expr).value), getLLVMType("float") };
         } else if (expr instanceof DoubleNode) {
             return new String[] { Double.toString(((DoubleNode) expr).value), getLLVMType("float") };
         } else if (expr instanceof BinaryOpNode) {

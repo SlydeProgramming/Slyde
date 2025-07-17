@@ -1,5 +1,6 @@
 package slyde.generation;
 
+import org.antlr.v4.runtime.ParserRuleContext;
 import org.antlr.v4.runtime.tree.ParseTree;
 import org.antlr.v4.runtime.tree.TerminalNode;
 
@@ -65,7 +66,7 @@ public class ASTGenerator {
             classNodes.add(createClassNode(classDeclTree));
         }
 
-        return new ProgramNode(classNodes, main);
+        return new ProgramNode(classNodes, main).setPosition(ctx);
     }
 
     public static ClassNode createClassNode(ClassDeclarationContext ctx) {
@@ -78,7 +79,7 @@ public class ASTGenerator {
 
         body = createClassBodyNode(ctx.classBody());
 
-        return new ClassNode(name, body);
+        return new ClassNode(name, body).setPosition(ctx);
     }
 
     public static List<ASTNode> createClassBodyNode(ClassBodyContext ctx) {
@@ -118,7 +119,7 @@ public class ASTGenerator {
         int exprSize = ctx.expr().size();
         ASTNode value = createASTNode(ctx.expr(exprSize - 1));
 
-        return new AssignmentNode(name, value);
+        return new AssignmentNode(name, value).setPosition(ctx);
     }
 
     public static IfNode createIfNode(IfStmtContext ctx) {
@@ -138,7 +139,7 @@ public class ASTGenerator {
 
         currentContext = currentContext.getParent();
 
-        return new IfNode(condition, trueBranch, falseBranch);
+        return new IfNode(condition, trueBranch, falseBranch).setPosition(ctx);
     }
 
     public static MainNode createMainNode(ParamListContext ctx1, BlockContext ctx2) {
@@ -155,7 +156,7 @@ public class ASTGenerator {
 
         currentContext = currentContext.getParent();
 
-        return new MainNode(params, body);
+        return new MainNode(params, body).setPosition(ctx2);
     }
 
     public static Expr createExprNode(ExprContext ctx) {
@@ -182,9 +183,9 @@ public class ASTGenerator {
             Expr right = createExprNode(ctx.expr(1));
 
             if (ctx.binOp() != null) {
-                return new BinaryOpNode(left, operator, right);
+                return Optimize.attemptCalc(new BinaryOpNode(left, operator, right)).setPosition(ctx);
             } else if (ctx.compareOp() != null) {
-                return new ConditionalOp(left, right, operator);
+                return new ConditionalOp(left, right, operator).setPosition(ctx);
             }
         }
 
@@ -195,14 +196,14 @@ public class ASTGenerator {
         List<ASTNode> params = createArgsListNode(ctx.argList());
         String name = ctx.IDENTIFIER().getText();
 
-        return new NewInstanceNode(name, params);
+        return new NewInstanceNode(name, params).setPosition(ctx);
     }
 
     public static MethodCallNode createMethodCallNode(MethodCallContext ctx) {
         List<ASTNode> params = createArgsListNode(ctx.argList());
         String name = ctx.IDENTIFIER().getText();
 
-        return new MethodCallNode(name, params);
+        return new MethodCallNode(name, params).setPosition(ctx);
     }
 
     public static List<ASTNode> createArgsListNode(ArgListContext ctx) {
@@ -224,7 +225,7 @@ public class ASTGenerator {
             statments.add(createASTNode(ctx.statement(i)));
         }
 
-        return new BlockNode(statments);
+        return new BlockNode(statments).setPosition(ctx);
 
     }
 
@@ -238,7 +239,7 @@ public class ASTGenerator {
         for (int i = 0; i < ctx.type().size(); i++) {
             vars.add(currentContext + "." + ctx.IDENTIFIER(i).getText());
             varTypes.add(ctx.type(i).getText());
-            params.add(new VarDeclNode(ctx.type(i).getText(), ctx.IDENTIFIER(i).getText(), null));
+            params.add(new VarDeclNode(ctx.type(i).getText(), ctx.IDENTIFIER(i).getText(), null).setPosition(ctx));
         }
 
         return params;
@@ -254,7 +255,7 @@ public class ASTGenerator {
 
         currentContext = currentContext.getParent();
 
-        return new ConstructorNode(params, body);
+        return new ConstructorNode(params, body).setPosition(ctx);
 
     }
 
@@ -291,14 +292,14 @@ public class ASTGenerator {
     public static ASTNode createTerminalNode(TerminalNode ctx) {
         String text = ctx.getText();
         if (text.matches("\\d+")) {
-            return new NumberNode(Integer.parseInt(text));
+            return new NumberNode(Integer.parseInt(text)).setPosition((ParserRuleContext) ctx.getParent());
         } else if (isBool(text)) {
             boolean value = text.equals("yes") || text.equals("true") || text.equals("on");
-            return new BooleanNode(value);
+            return new BooleanNode(value).setPosition((ParserRuleContext) ctx.getParent());
         } else if (text.contains("\"")) {
-            return new StringNode(text);
+            return new StringNode(text).setPosition((ParserRuleContext) ctx.getParent());
         }
-        return new IdentifierNode(text, getType(text));
+        return new IdentifierNode(text, getType(text)).setPosition((ParserRuleContext) ctx.getParent());
     }
 
     public static VarDeclNode createVarDeclNode(VarDeclContext ctx) {
@@ -317,7 +318,7 @@ public class ASTGenerator {
         vars.add(currentContext + "." + name);
         varTypes.add(type);
 
-        return new VarDeclNode(type, name, value);
+        return new VarDeclNode(type, name, value).setPosition(ctx);
 
     }
 

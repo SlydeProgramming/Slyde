@@ -9,12 +9,13 @@ import slyde.compiler.LP.SlydeParser;
 import slyde.compiler.LP.SlydeParser.ProgContext;
 import slyde.generation.ASTGenerator;
 import slyde.generation.LLVMGenerator;
+import slyde.generation.LLVMGeneratorVersionTwo;
 import slyde.structure.AST.ProgramNode;
 import slyde.utils.FileHandler;
 
 public class Compiler {
 
-    public static void compile(String path, String outPath){
+    public static void compile(String path, String outPath) {
         try {
             CharStream input = CharStreams.fromFileName(path);
 
@@ -25,20 +26,17 @@ public class Compiler {
 
             ProgramNode prog = ASTGenerator.generateAST(tree);
 
-            LLVMGenerator generator =  new LLVMGenerator();
+            LLVMGenerator generator = new LLVMGenerator();
 
-
-            FileHandler.writeFile(outPath, generator.generate(prog));
-
-            
+            FileHandler.writeFile(outPath, LLVMGeneratorVersionTwo.generate(prog));
 
         } catch (Exception e) {
             e.printStackTrace();
         }
 
     }
-    
-    public static void compile(String path, String outPath, String exe){
+
+    public static void compile(String path, String outPath, String exe) {
         try {
             CharStream input = CharStreams.fromFileName(path);
 
@@ -49,20 +47,18 @@ public class Compiler {
 
             ProgramNode prog = ASTGenerator.generateAST(tree);
 
-            LLVMGenerator generator =  new LLVMGenerator();
+            LLVMGenerator generator = new LLVMGenerator();
 
             // ASTGenerator.printProg(prog);
 
             FileHandler.writeFile(outPath, generator.generate(prog));
 
             FileHandler.exec("./clang " + outPath + " -o " + exe);
-            
-
 
         } catch (Exception e) {
             e.printStackTrace();
         }
 
     }
-    
+
 }
