@@ -75,7 +75,7 @@ public class MultiPartTextGenerator {
                 append(", " + paramsList.get(i));
             }
         }
-        append(") " + (isSafe ? "nounwind" : "") + "  {");
+        append(") " + (isSafe ? "nounwind" : "") + "  {\n");
         up();
     }
 

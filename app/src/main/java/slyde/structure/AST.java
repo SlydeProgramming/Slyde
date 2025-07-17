@@ -6,8 +6,11 @@ import java.util.List;
 import org.antlr.v4.runtime.ParserRuleContext;
 import org.antlr.v4.runtime.Token;
 
+import slyde.context.HandleProtocol;
+import slyde.context.Context;
+import slyde.generation.LLVMGeneratorVersionTwo;
+import slyde.generation.MultiPartTextGenerator;
 import slyde.utils.Indent;
-import slyde.utils.MetaDataString;
 
 public class AST {
 
@@ -19,9 +22,9 @@ public class AST {
 
         public abstract String toString(Indent lvl);
 
-        public <T> void gen(MetaDataString<T> ctx) {
+        public <T> void gen(Context<T> ctx) {
 
-            System.out.println(ctx.getStringManager().end());
+            System.out.println(LLVMGeneratorVersionTwo.codemanager.end());
 
             throw new Error("Unknown Alert location for node: " + this.getClass().getSimpleName() + "\n located at "
                     + line + " , " + column);
@@ -347,6 +350,23 @@ public class AST {
         }
 
         @Override
+        public <T> void gen(Context<T> ctx) {
+            MultiPartTextGenerator cm = LLVMGeneratorVersionTwo.codemanager;
+            if (!Context.createdStrings.contains(value)) {
+                cm.appendHead("@" + value + " = private constant [" + (value.length() + 1) + " x i8] c\"" + value
+                        + "\\00\"\n");
+                Context.createdStrings.add(value);
+            }
+
+            if (ctx.is(HandleProtocol.GET)) {
+                cm.append(cm.get() + "%" + ctx.getRequestName() + " = getelementptr inbounds [" + (value.length() + 1)
+                        + " x i8], [" + (value.length() + 1) + " x i8]* @" + value + ", i32 0, i32 0\n");
+                ctx.setReturnValues("%" + ctx.getRequestName(), "i8*");
+            }
+
+        }
+
+        @Override
         public String toString(Indent lvl) {
             return lvl.get() + "String: " + value;
         }
@@ -372,6 +392,12 @@ public class AST {
         public IdentifierNode(String name, String type) {
             this.name = name;
             this.type = type;
+        }
+
+        @Override
+        public <T> void gen(Context<T> ctx) {
+            ctx.setReturnValues(ctx.findReturnedName(ctx.getContextName() + name),
+                    ctx.findReturnedType(ctx.getContextName() + name));
         }
 
         @Override
@@ -564,8 +590,32 @@ public class AST {
         }
 
         @Override
-        public <T> void gen(MetaDataString<T> ctx) {
+        public <T> void gen(Context<T> ctx) {
+            MultiPartTextGenerator cm = LLVMGeneratorVersionTwo.codemanager;
+            if (ctx.getHandleProtocol().equals(HandleProtocol.STANDALONE)) {
 
+                int i = 0;
+                for (ASTNode node : arguments) {
+                    ctx
+                            .requestName(methodName + "_" + node.getClass().getSimpleName() + "_" + i)
+                            .setHandleProtocol(HandleProtocol.GET);
+                    node.gen(ctx);
+                    i++;
+                }
+
+                cm.append(cm.get() + "call void @" + methodName + "(");
+
+                for (int j = 0; j < i; j++) {
+                    String lookUp = methodName + "_" + arguments.get(j).getClass().getSimpleName() + "_" + j;
+                    String name = ctx.findReturnedName(lookUp);
+                    String type = ctx.findReturnedType(lookUp);
+                    cm.append(type + " " + name + ",");
+                }
+
+                cm.removeLastChar();
+
+                cm.append(")\n");
+            }
         }
 
         @Override
