@@ -3,6 +3,7 @@
  */
 package slyde;
 
+import java.io.IOException;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 
@@ -13,7 +14,7 @@ public class App {
     public static Path target;
     public static Path interrupt;
 
-    public static void main(String[] args) {
+    public static void main(String[] args) throws IOException {
 
         if (args.length > 0) {
 

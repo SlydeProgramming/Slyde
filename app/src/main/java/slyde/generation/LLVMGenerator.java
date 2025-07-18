@@ -6,6 +6,7 @@ import java.util.List;
 import slyde.structure.AST.*;
 import slyde.utils.Indent;
 
+@Deprecated
 public class LLVMGenerator {
     private StringBuilder llvmCode;
     private int tempVarCounter;
