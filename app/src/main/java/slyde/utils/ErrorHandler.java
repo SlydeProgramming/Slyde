@@ -1,9 +1,6 @@
 package slyde.utils;
 
-import java.io.IOException;
-
 import slyde.App;
-import slyde.generation.LLVMGeneratorVersionTwo;
 
 public class ErrorHandler {
 
@@ -13,24 +10,12 @@ public class ErrorHandler {
     }
 
     public static void error(String message, int l, int c) {
-        try {
-            FileHandler.writeFile(App.interrupt.toString(), LLVMGeneratorVersionTwo.codemanager.end());
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
-
         System.out.println(
                 "\033[31m" + message + "\n\nat " + App.target.toString() + ":" + l + ":" + (c + 1) + "\n" + "\033[0m");
         throw new Error();
     }
 
     public static void error(String message, int l) {
-        try {
-            FileHandler.writeFile(App.interrupt.toString(), LLVMGeneratorVersionTwo.codemanager.end());
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
-
         System.out.println(
                 "\033[31m" + message + "\n\nat " + App.target.toString() + ":" + l + "\n" + "\033[0m");
         throw new Error();

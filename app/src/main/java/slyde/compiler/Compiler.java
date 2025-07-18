@@ -49,25 +49,4 @@ public class Compiler {
 
     }
 
-    public static void compile(String path, String outPath, String exe) {
-        try {
-            CharStream input = CharStreams.fromFileName(path);
-
-            SlydeLexer lexer = new SlydeLexer(input);
-            CommonTokenStream tokens = new CommonTokenStream(lexer);
-            SlydeParser parser = new SlydeParser(tokens);
-            ProgContext tree = parser.prog();
-
-            ProgramNode prog = ASTGenerator.generateAST(tree);
-
-            FileHandler.writeFile(outPath, LLVMGeneratorVersionTwo.generate(prog));
-
-            FileHandler.exec("./clang " + outPath + " -o " + exe);
-
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
-
-    }
-
 }
