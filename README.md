@@ -2,24 +2,27 @@
 
 ### Download Instructions
 
-Go to relesess and download the latest jar then you can compile your .sly code into .ll
-This requires java version 21
-Download Link:
-https://www.oracle.com/java/technologies/downloads/#java21
+Go to relesess and download the latest installer for your operating system (currently only supports windows)
+
+Unzip the folder and run the installer.bat with admin permisions and your good to go!
 
 Also install the Slyde Language extention on vs code!
 
-once you have java downloaded you can run
-
 
 ```
-java -jar %SLYDE_FILE_PATH% %PATH_TO_SLY% %OUTPUT_FILE_PATH%
+slyde (build | run) %PATH_TO_.SLY% 
 ```
 
  example
 
 ```
-java -jar ./Slyde.jar Hello.sly o.ll
+slyde build hello_world.sly
+```
+
+output:
+
+```
+Build succeeded. Executable is at: C:\Users\every\Desktop\out.exe
 ```
 
 ### Documentation
