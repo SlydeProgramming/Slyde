@@ -1,3 +1,35 @@
+
+class Test {
+
+    constructor(){
+
+        print("test was created");
+
+    }
+
+    void wtf(){
+        print("??????");
+    }
+
+    int one(){
+        int a = 1;
+        return a;
+    }
+
+}
+
+
 main(){
     print("Hello World!");
+
+    Test test = new Test();
+
+    test.wtf();
+
+    int here = test.one();;
+
+    if (here == 1){
+        print("omg????");
+    }
+
 }

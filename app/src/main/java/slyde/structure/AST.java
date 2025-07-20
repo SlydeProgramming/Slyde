@@ -2,6 +2,7 @@ package slyde.structure;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.UUID;
 
 import org.antlr.v4.runtime.ParserRuleContext;
 import org.antlr.v4.runtime.Token;
@@ -166,6 +167,8 @@ public class AST {
 
                 objects.add(new String[] { "%" + varName, "%" + name + "*" });
 
+                Context.regiserVar(varName, name);
+
             } else {
                 ErrorHandler.warn("Warning new instance of " + name
                         + " created but its value is never stored", line, column);
@@ -190,10 +193,59 @@ public class AST {
     public static class ReturnNode extends ASTNode {
         public ASTNode expr;
         public String type;
+        public int c = 0;
 
         public ReturnNode(ASTNode expr, String type) {
             this.expr = expr;
             this.type = type;
+        }
+
+        @Override
+        public <T> void gen(Context<T> ctx) {
+            if (ctx.is(HandleProtocol.STANDALONE)) {
+
+                if (type == "void") {
+                    cm.append(cm.get() + "ret void\n");
+                    return;
+                }
+
+                int rtI = tI++;
+
+                ctx
+                        .setHandleProtocol(HandleProtocol.GET)
+                        .requestName(ctx.getContextName() + "resultValue_" + rtI);
+
+                expr.gen(ctx);
+
+                String rType = ctx.findReturnedType(ctx.getContextName() + "resultValue_" + rtI);
+
+                String name = ctx.findReturnedName(
+                        ctx.getContextName() + "resultValue_" + rtI);
+
+                if (rType != MultiPartTextGenerator.getLLVMType(type)) {
+
+                    if (rType.equals(MultiPartTextGenerator.getLLVMType(type) + "*")) {
+                        String realVal = cm.load(ctx.getContextName(), MultiPartTextGenerator.getLLVMType(type), name);
+
+                        if (realVal == null) {
+                            ErrorHandler.error("attempted to return " + MultiPartTextGenerator.getSlydeType(rType)
+                                    + " when expected " + type, line, column);
+                        } else {
+                            name = realVal;
+                        }
+                    } else {
+                        ErrorHandler.error(
+                                "Expected " + type + " but instead got " + MultiPartTextGenerator.getSlydeType(rType),
+                                line, column);
+                    }
+
+                }
+
+                cm.append(cm.get() + "ret " + MultiPartTextGenerator.getLLVMType(type) + " " + name + "\n");
+
+            } else {
+                ErrorHandler.error("Attempted to store a return statment", line, column);
+            }
         }
 
         @Override
@@ -226,18 +278,18 @@ public class AST {
 
                 value.gen(ctx);
 
-                String actualName = (ctx.getContextName() + name)
-                        .equals(ctx.findReturnedName(ctx.getContextName() + name))
-                        || ("%" + ctx.getContextName() + name)
-                                .equals(ctx.findReturnedName(ctx.getContextName() + name)) ? null
-                                        : ctx.getContextName() + name;
+                String actualName = ctx.findReturnedName(ctx.getContextName() + name);
 
                 if (actualName != null) {
-                    cm.append(cm.get() + "%" + actualName + " = "
-                            + ctx.findReturnedType(ctx.getContextName() + name) + " "
-                            + ctx.findReturnedName(ctx.getContextName() + name));
+                    if (!actualName.equals("%" + ctx.getContextName() + name)) {
+                        cm.append(cm.get() + actualName + " = "
+                                + ctx.findReturnedType(ctx.getContextName() + name) + " "
+                                + ctx.findReturnedName(ctx.getContextName() + name) + "\n");
+                    }
                 }
 
+            } else {
+                ErrorHandler.error("FUCK idk why u are trying to store this ;-;-;-;-;-;-;-;", line, column);
             }
         }
 
@@ -248,8 +300,7 @@ public class AST {
             String v;
 
             if (value == null) {
-                lvl.up();
-                str += lvl.get() + "null";
+                str += lvl.up() + "null";
                 lvl.down();
             } else {
                 lvl.up();
@@ -345,12 +396,14 @@ public class AST {
         public String name;
         public List<VarDeclNode> params;
         public BlockNode body;
+        public String id;
 
         public MethodNode(String returnType, String name, List<VarDeclNode> params, BlockNode body) {
             this.returnType = returnType;
             this.name = name;
             this.params = params;
             this.body = body;
+            this.id = UUID.randomUUID().toString().replace("-", "");
         }
 
         @Override
@@ -507,6 +560,17 @@ public class AST {
         }
 
         @Override
+        public <T> void gen(Context<T> ctx) {
+            if (ctx.is(HandleProtocol.GET)) {
+                cm.append(cm.get() + "%" + ctx.getRequestName() + " = alloca i32\n");
+                cm.append(cm.get() + "store i32 " + value + ", i32* %" + ctx.getRequestName() + "\n");
+                ctx.setReturnValues('%' + ctx.getRequestName(), "i32*");
+            } else {
+                ErrorHandler.warn("Integer " + ctx.getContextName() + " is never stored", line, column);
+            }
+        }
+
+        @Override
         public String toString(Indent lvl) {
             return lvl.get() + "Number: " + value;
         }
@@ -567,7 +631,6 @@ public class AST {
 
                     boolean special = false;
 
-                    // Integer/Boolean comparison
                     switch (operator) {
                         case "==":
                             cmpOp = "eq";
@@ -614,7 +677,6 @@ public class AST {
                     }
 
                 } else if (lType.equals("double")) {
-                    // Floating-point comparison
                     switch (operator) {
                         case "==":
                             cmpOp = "oeq";
@@ -641,7 +703,6 @@ public class AST {
                     cm.append(cm.get() + result + " = fcmp " + cmpOp + " double " + lName + ", " + rName + "\n");
 
                 } else if (lType.equals("i8*")) {
-                    // String comparison using custom function
                     switch (operator) {
                         case "==":
                             cm.append(cm.get() + result + " = call i1 @slyde_str_eq(i8* " + lName + ", i8* " + rName
@@ -749,7 +810,10 @@ public class AST {
 
                 int b1 = tI++;
                 int b2 = tI++;
-                int b3 = tI++;
+                int b3 = b2;
+                if (falseBranch != null) {
+                    b3 = tI++;
+                }
                 cm.append(cm.get() + "br i1 " + val + ", label %label" + b1 + ", label %label" + b2 + "\n");
 
                 cm.createLabel(b1);
@@ -806,8 +870,7 @@ public class AST {
             str += lvl.up() + "Condition:\n";
             lvl.up();
             str += condition.toString(lvl) + "\n";
-            lvl.down();
-            str += lvl.get() + "True Branch:\n";
+            str += lvl.down() + "True Branch:\n";
             lvl.up();
             str += trueBranch.toString(lvl) + "\n";
             lvl.down();
@@ -837,8 +900,7 @@ public class AST {
             str += lvl.get() + "WhileNode:\n" + lvl.up() + "Condition:\n";
             lvl.up();
             str += condition.toString(lvl) + "\n";
-            lvl.down();
-            str += lvl.get() + "Body:\n";
+            str += lvl.down() + "Body:\n";
             lvl.up();
             str += body.toString(lvl);
             lvl.down();
@@ -867,16 +929,13 @@ public class AST {
             str += lvl.get() + "ForNode:\n" + lvl.up() + "Init:\n";
             lvl.up();
             str += init.toString(lvl) + "\n";
-            lvl.down();
-            str += lvl.get() + "Condition:\n";
+            str += lvl.down() + "Condition:\n";
             lvl.up();
             str += condition.toString(lvl) + "\n";
-            lvl.down();
-            str += lvl.get() + "Update:\n";
+            str += lvl.down() + "Update:\n";
             lvl.up();
             str += update.toString(lvl) + "\n";
-            lvl.down();
-            str += lvl.get() + "Body:\n";
+            str += lvl.down() + "Body:\n";
             lvl.up();
             str += body.toString(lvl) + "\n";
             lvl.down();
@@ -887,45 +946,107 @@ public class AST {
 
     public static class MethodCallNode extends Expr {
         public String methodName;
+        public String caller = null;
         public List<ASTNode> arguments;
-        static int tI = 0;
+        public String type = null;
 
-        public MethodCallNode(String methodName, List<ASTNode> arguments) {
+        public MethodCallNode(String methodName, List<ASTNode> arguments, String caller) {
             this.methodName = methodName;
             this.arguments = arguments;
+            this.caller = caller;
         }
 
         @Override
         public <T> void gen(Context<T> ctx) {
-            if (ctx.getHandleProtocol().equals(HandleProtocol.STANDALONE)) {
+            HandleProtocol og = ctx.getHandleProtocol();
 
-                List<Integer> tIs = new ArrayList<>();
+            List<Integer> tIs = new ArrayList<>();
 
-                int i = 0;
-                for (ASTNode node : arguments) {
-                    ctx
-                            .requestName(methodName + "_" + node.getClass().getSimpleName() + "_" + tI)
-                            .setHandleProtocol(HandleProtocol.GET);
-                    node.gen(ctx);
-                    tIs.add(tI);
-                    tI++;
-                    i++;
-                }
-
-                cm.append(cm.get() + "call void @" + methodName + "(");
-
-                for (int j = 0; j < i; j++) {
-                    String lookUp = methodName + "_" + arguments.get(j).getClass().getSimpleName() + "_"
-                            + tIs.get(j);
-                    String name = ctx.findReturnedName(lookUp);
-                    String type = ctx.findReturnedType(lookUp);
-                    cm.append(type + " " + name + ",");
-                }
-
-                cm.removeLastChar();
-
-                cm.append(")\n");
+            int i = 0;
+            for (ASTNode node : arguments) {
+                ctx
+                        .requestName(methodName + "_" + node.getClass().getSimpleName() + "_" + tI)
+                        .setHandleProtocol(HandleProtocol.GET);
+                node.gen(ctx);
+                tIs.add(tI);
+                tI++;
+                i++;
             }
+
+            List<String> adds = new ArrayList<>();
+            List<String> typs = new ArrayList<>();
+
+            for (int j = 0; j < i; j++) {
+                String lookUp = methodName + "_" + arguments.get(j).getClass().getSimpleName() + "_"
+                        + tIs.get(j);
+                String name = ctx.findReturnedName(lookUp);
+                String type = ctx.findReturnedType(lookUp);
+                adds.add(type + " " + name);
+            }
+
+            if (caller != null) {
+                String type = ctx.findRegisteredType(caller);
+                List<MethodNode> canidates = ctx.findRegisterMethods(type, methodName);
+
+                canidates.removeIf((n) -> {
+                    return n.params.size() != arguments.size();
+                });
+
+                canidates.removeIf((n) -> {
+                    int c = 0;
+                    for (VarDeclNode v : n.params) {
+                        if (v.type != typs.get(c)) {
+                            return true;
+                        }
+                        c++;
+                    }
+                    return false;
+                });
+
+                if (canidates.size() != 1) {
+                    if (canidates.size() > 0) {
+                        ErrorHandler.error(
+                                "Fuck you man, you made " + canidates.size()
+                                        + " of the same method an idk what to do with it in class  "
+                                        + type + " method name " + methodName);
+                    } else {
+                        ErrorHandler.error("I cant find this fucking method you dipshit you tryna find it in class "
+                                + type + " name " + methodName, line, column);
+                    }
+                } else {
+                    this.methodName = type + "_" + this.methodName + "_" + canidates.get(0).id;
+
+                    adds.addFirst("%" + type + "* %" + ctx.getContextName() + caller);
+
+                    this.type = MultiPartTextGenerator.getLLVMType(canidates.get(0).returnType);
+                }
+            } else {
+                this.type = LLVMGeneratorVersionTwo.defaultRetRegistery.get(methodName);
+                if (this.type == null) {
+                    ErrorHandler.error("I cant find this fucking method you dipshit name " + methodName, line, column);
+                }
+            }
+
+            if (og.equals(HandleProtocol.STANDALONE)) {
+
+                cm.append(cm.get() + "call " + type + " @" + methodName + "(");
+
+            } else {
+                cm.append(cm.get() + "%" + ctx.getRequestName() + " = call " + type + " @" + methodName + "(");
+
+                ctx.setReturnValues("%" + ctx.getRequestName(), this.type);
+            }
+
+            for (String a : adds) {
+                cm.append(a + ",");
+            }
+
+            if (adds.size() > 0) {
+                cm.removeLastChar();
+            }
+
+            cm.append(")\n");
+
         }
 
         @Override
@@ -940,26 +1061,5 @@ public class AST {
             lvl.down();
             return str;
         }
-
     }
-
-    public static class PrintNode extends ASTNode {
-        public ASTNode value;
-
-        public PrintNode(ASTNode value) {
-            this.value = value;
-        }
-
-        @Override
-        public String toString(Indent lvl) {
-            String str = lvl.get() + "Print:\n" + lvl.up() + "Value:\n";
-            lvl.up();
-            str += value.toString(lvl);
-            lvl.down();
-            lvl.down();
-            return str;
-        }
-
-    }
-
 }

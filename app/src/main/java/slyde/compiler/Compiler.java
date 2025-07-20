@@ -37,14 +37,8 @@ public class Compiler {
 
             FileHandler.writeFile(outPath, LLVMGeneratorVersionTwo.generate(prog));
         } catch (Exception e) {
-            if (e instanceof NullPointerException) {
-                String out = FileHandler.readFile(Paths.get("logs.txt").toAbsolutePath().toString());
-                int line = Integer.parseInt("" + out.charAt(5));
-                ErrorHandler.error("Missing ;", line - 1);
-            } else {
-                e.printStackTrace();
-            }
-
+            String out = FileHandler.readFile(Paths.get("logs.txt").toAbsolutePath().toString());
+            ErrorHandler.error(out);
         }
 
     }

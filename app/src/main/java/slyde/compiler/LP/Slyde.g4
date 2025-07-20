@@ -21,6 +21,7 @@ paramList:
 // Statements
 block: '{' statement* '}';
 
+
 constructor:
     CONSTRUCT '(' paramList? ')' block;
 
@@ -47,7 +48,7 @@ assignment:
 
 // Method Calls
 methodCall: 
-    IDENTIFIER '(' argList? ')' ';';
+    IDENTIFIER ('.' IDENTIFIER)? '(' argList? ')' ';';
 
 // Arguments
 argList: expr (',' expr)*;
@@ -107,6 +108,8 @@ SLC:
 
 MLC:
     '/*' .*? '*/' -> skip;
+
+
 
 
 CLASS: 'class';

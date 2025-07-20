@@ -4,7 +4,9 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 import slyde.context.HandleProtocol;
 import slyde.context.Context;
@@ -13,6 +15,12 @@ import slyde.structure.AST.*;
 public class LLVMGeneratorVersionTwo {
 
     public static MultiPartTextGenerator codemanager = new MultiPartTextGenerator();
+
+    public static Map<String, String> defaultRetRegistery = new HashMap<>();
+
+    static {
+        defaultRetRegistery.put("print", "void");
+    }
 
     private static void createPreDefinedMethods() {
 
@@ -58,6 +66,8 @@ public class LLVMGeneratorVersionTwo {
             for (MethodNode node : methods) {
                 List<String> params = new ArrayList<>();
 
+                Context.registerMethod(classIdentifier, node);
+
                 params.add("%" + classIdentifier + "* %this");
 
                 for (VarDeclNode param : node.params) {
@@ -66,7 +76,7 @@ public class LLVMGeneratorVersionTwo {
                 }
 
                 // Add method header (start method definition)
-                codemanager.addMethodHeader(classIdentifier + "_" + node.name,
+                codemanager.addMethodHeader(classIdentifier + "_" + node.name + "_" + node.id,
                         MultiPartTextGenerator.getLLVMType(node.returnType),
                         params);
 
@@ -175,7 +185,7 @@ public class LLVMGeneratorVersionTwo {
 
     private static void generateMainMethod(MainNode main) {
         codemanager.addComment("============== Main Method ===============");
-        codemanager.addMethodHeader("main");
+        codemanager.addMethodHeader("main", "i32");
 
         Context<MainNode> context = new Context<MainNode>()
                 .setObj(main)
@@ -196,7 +206,7 @@ public class LLVMGeneratorVersionTwo {
 
         }
 
-        codemanager.append(codemanager.get() + "ret void\n");
+        codemanager.append(codemanager.get() + "ret i32 0\n");
 
         codemanager.down();
         codemanager.append("}\n");

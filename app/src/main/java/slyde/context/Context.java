@@ -1,13 +1,19 @@
 package slyde.context;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
+
+import slyde.structure.AST.MethodNode;
 
 public class Context<T> {
 
     public static List<String> createdStrings = new ArrayList<>();
     private MetaData metaData = new MetaData();
     private T obj;
+    private static Map<String, String> varTypeReg = new HashMap<>();
+    private static Map<String, List<MethodNode>> classMethodReg = new HashMap<>();
 
     public Context<T> setHandleProtocol(HandleProtocol hp) {
         metaData.hp = hp;
@@ -41,6 +47,34 @@ public class Context<T> {
 
     public T getObjectValue() {
         return obj;
+    }
+
+    public static void regiserVar(String contextName, String type) {
+        varTypeReg.put(contextName, type);
+    }
+
+    public static void registerMethod(String type, MethodNode method) {
+        List<MethodNode> registeredMethods = classMethodReg.get(type);
+        if (registeredMethods == null) {
+            registeredMethods = new ArrayList<>();
+        }
+        registeredMethods.add(method);
+        classMethodReg.put(type, registeredMethods);
+    }
+
+    public String findRegisteredType(String rawName) {
+        return varTypeReg.get(getContextName() + rawName);
+    }
+
+    public List<MethodNode> findRegisterMethods(String type, String methodName) {
+        List<MethodNode> registeredMethods = new ArrayList<>(classMethodReg.get(type));
+
+        registeredMethods.removeIf((n) -> {
+            return !n.name.equals(methodName);
+        });
+
+        return registeredMethods;
+
     }
 
     public String getRequestName() {

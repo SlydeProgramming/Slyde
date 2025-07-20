@@ -20,4 +20,10 @@ public class ErrorHandler {
                 "\033[31m" + message + "\n\nat " + App.target.toString() + ":" + l + "\n" + "\033[0m");
         throw new Error();
     }
+
+    public static void error(String message) {
+        System.out.println(
+                "\033[31m" + message + "\n" + "\033[0m");
+        throw new Error();
+    }
 }

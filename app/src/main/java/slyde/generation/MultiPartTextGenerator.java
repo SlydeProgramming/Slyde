@@ -155,4 +155,15 @@ public class MultiPartTextGenerator {
         };
     }
 
+    public static String getSlydeType(String type) {
+        return switch (type.replace("*", "").replace("%", "")) {
+            case "i32" -> "int";
+            case "i1" -> "boolean";
+            case "void" -> "void";
+            case "double" -> "double";
+            case "i8*" -> "String";
+            default -> type;
+        };
+    }
+
 }

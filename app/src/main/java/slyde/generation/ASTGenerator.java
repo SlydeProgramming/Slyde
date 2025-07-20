@@ -14,12 +14,9 @@ import java.util.List;
 public class ASTGenerator {
 
     public static class Context {
-        String name;
-        Context parent = null;
-
-        public Context(String name) {
-            this.name = name;
-        }
+        public String name;
+        Context parent;
+        String rType;
 
         public Context(String name, Context parent) {
             this.name = name;
@@ -31,12 +28,12 @@ public class ASTGenerator {
         }
 
         public String getName() {
-            return name;
+            return parent != null ? parent.getName() + "." : "" + name;
         }
 
         @Override
         public String toString() {
-            return name;
+            return getName();
         }
 
     }
@@ -49,7 +46,7 @@ public class ASTGenerator {
     public static int blockIndex = 0;
 
     public static String getNewBlockContext() {
-        String str = ".block" + blockIndex;
+        String str = "block" + blockIndex;
         blockIndex++;
         return str;
     }
@@ -57,7 +54,7 @@ public class ASTGenerator {
     public static ProgramNode generateAST(ProgContext ctx) {
         List<ClassNode> classNodes = new ArrayList<>();
 
-        currentContext = new Context("prog");
+        currentContext = new Context("prog", null);
 
         MainNode main = createMainNode(ctx.paramList(0), ctx.block(0));
 
@@ -73,7 +70,7 @@ public class ASTGenerator {
         List<TerminalNode> TNL = ctx.IDENTIFIER();
         String name = TNL.get(0).getText();
 
-        currentContext = new Context(currentContext + "." + name, currentContext);
+        currentContext = new Context(name, currentContext);
 
         List<ASTNode> body = new ArrayList<>();
 
@@ -108,10 +105,41 @@ public class ASTGenerator {
             return createAssignmentNode((AssignmentContext) tree);
         } else if (tree instanceof MethodCallContext) {
             return createMethodCallNode((MethodCallContext) tree);
+        } else if (tree instanceof MethodDeclarationContext) {
+            return createMethodNode((MethodDeclarationContext) tree);
+        } else if (tree instanceof ReturnStmtContext) {
+            return createReturnStmt((ReturnStmtContext) tree);
         } else {
             System.out.println(tree.toStringTree());
         }
         return null;
+    }
+
+    public static ReturnNode createReturnStmt(ReturnStmtContext ctx) {
+        String t = currentContext.rType;
+        currentContext.rType = null;
+        if (t == "void") {
+            return new ReturnNode(null, t);
+        }
+        return new ReturnNode(createASTNode(ctx.expr()), t);
+    }
+
+    public static MethodNode createMethodNode(MethodDeclarationContext ctx) {
+
+        List<VarDeclNode> params = createParamsListNode(ctx.paramList());
+
+        currentContext = new Context(ctx.IDENTIFIER().getText(), currentContext);
+        currentContext.rType = ctx.type().getText();
+
+        BlockNode body = createBlockNode(ctx.block());
+
+        if (currentContext.rType != null) {
+            body.statements.add(new ReturnNode(null, "void"));
+        }
+
+        currentContext = currentContext.getParent();
+
+        return new MethodNode(ctx.type().getText(), ctx.IDENTIFIER().getText(), params, body);
     }
 
     public static AssignmentNode createAssignmentNode(AssignmentContext ctx) {
@@ -126,7 +154,7 @@ public class ASTGenerator {
 
         String blockContext = getNewBlockContext();
 
-        currentContext = new Context(currentContext + "." + blockContext, currentContext);
+        currentContext = new Context(blockContext, currentContext);
 
         Expr condition = createExprNode(ctx.expr());
 
@@ -146,7 +174,7 @@ public class ASTGenerator {
 
         String blockContext = getNewBlockContext();
 
-        currentContext = new Context(currentContext + "." + blockContext, currentContext);
+        currentContext = new Context(blockContext, currentContext);
 
         List<VarDeclNode> params = null;
         if (ctx1 != null) {
@@ -173,7 +201,7 @@ public class ASTGenerator {
         } else if (ctx.methodCall() != null) {
             return createMethodCallNode(ctx.methodCall());
         } else if (ctx.IDENTIFIER() != null) {
-            return (Expr) createTerminalNode(ctx.IDENTIFIER());
+            return (Expr) createTerminalNode(ctx.IDENTIFIER()); // TODO: add support for non local vars
         } else if (ctx.newInstance() != null) {
             return createNewInstanceNode(ctx.newInstance());
         }
@@ -202,9 +230,19 @@ public class ASTGenerator {
 
     public static MethodCallNode createMethodCallNode(MethodCallContext ctx) {
         List<ASTNode> params = createArgsListNode(ctx.argList());
-        String name = ctx.IDENTIFIER().getText();
+        List<TerminalNode> call = ctx.IDENTIFIER();
 
-        return new MethodCallNode(name, params).setPosition(ctx);
+        String name;
+        String caller = null;
+        // TODO: add support for non local calls
+        if (call.size() > 1) {
+            caller = call.get(0).getText();
+            name = call.get(1).getText();
+        } else {
+            name = call.get(0).getText();
+        }
+
+        return new MethodCallNode(name, params, caller).setPosition(ctx);
     }
 
     public static List<ASTNode> createArgsListNode(ArgListContext ctx) {
@@ -249,7 +287,7 @@ public class ASTGenerator {
     public static ConstructorNode createConstructorNode(ConstructorContext ctx) {
         String blockContext = getNewBlockContext();
 
-        currentContext = new Context(currentContext + "." + blockContext, currentContext);
+        currentContext = new Context(blockContext, currentContext);
 
         List<VarDeclNode> params = createParamsListNode(ctx.paramList());
         BlockNode body = createBlockNode(ctx.block());
