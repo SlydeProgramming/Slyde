@@ -52,7 +52,6 @@ public class App {
             return;
         }
 
-        System.out.println("Running executable...");
         runExecutable(executable);
     }
 
@@ -99,8 +98,6 @@ public class App {
         pb.inheritIO();
         Process process = pb.start();
         int exitCode = process.waitFor();
-
-        System.out.println("Program exited with code: " + exitCode);
     }
 
     private static Path getExecutablePath() {
