@@ -1008,7 +1008,8 @@ public class AST {
                         ErrorHandler.error(
                                 "Fuck you man, you made " + canidates.size()
                                         + " of the same method an idk what to do with it in class  "
-                                        + type + " method name " + methodName);
+                                        + type + " method name " + methodName,
+                                line, column);
                     } else {
                         ErrorHandler.error("I cant find this fucking method you dipshit you tryna find it in class "
                                 + type + " name " + methodName, line, column);

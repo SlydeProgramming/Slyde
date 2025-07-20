@@ -9,13 +9,18 @@ plugins {
     kotlin("jvm") version "1.8.0"
     application
     id("com.github.johnrengelman.shadow") version "7.0.0"
+    id("org.graalvm.buildtools.native") version "0.10.6"
 }
+
 
 repositories {
     // Use Maven Central for resolving dependencies.
     mavenCentral()
     jcenter()
     maven{ url = uri("https://jitpack.io")}
+    maven{ url = uri("https://raw.githubusercontent.com/graalvm/native-build-tools/snapshots") }
+    gradlePluginPortal()
+    
 }
 
 dependencies {
@@ -27,10 +32,28 @@ dependencies {
     implementation(libs.guava)
 }
 
+val graalToolchain = java.toolchain
+
+graalvmNative {
+    binaries {
+        named("main") {
+            javaLauncher.set(
+                javaToolchains.launcherFor {
+                    languageVersion.set(JavaLanguageVersion.of(21))
+                    vendor.set(JvmVendorSpec.GRAAL_VM)
+                }
+            )
+            imageName.set("slyde")
+            buildArgs.add("--no-fallback")
+        }
+    }
+}
+
 // Apply a specific Java toolchain to ease working on different environments.
 java {
     toolchain {
         languageVersion = JavaLanguageVersion.of(21)
+        vendor.set(JvmVendorSpec.GRAAL_VM)
     }
 }
 

@@ -38,7 +38,7 @@ public class Compiler {
             FileHandler.writeFile(outPath, LLVMGeneratorVersionTwo.generate(prog));
         } catch (Exception e) {
             String out = FileHandler.readFile(Paths.get("logs.txt").toAbsolutePath().toString());
-            ErrorHandler.error(out);
+            ErrorHandler.error(out, e);
         }
 
     }

@@ -1,10 +1,12 @@
 package slyde;
 
 import java.io.IOException;
+import java.net.URISyntaxException;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 
 import slyde.compiler.Compiler;
+import slyde.utils.ErrorHandler;
 
 public class App {
 
@@ -108,9 +110,35 @@ public class App {
 
     private static String getClangExecutablePath() {
         String execName = isWindows() ? "clang.exe" : "clang";
-        // Assuming clang is bundled in "bin" directory next to your executable
-        Path clangPath = Paths.get("clang", execName);
-        return clangPath.toAbsolutePath().toString();
+
+        try {
+            // This gets the path of the running executable (slyde.exe) reliably
+            Path exePath = Paths.get(
+                    getExecutableLocation()).getParent();
+
+            Path clangPath = exePath.resolve("clang").resolve(execName);
+
+            if (!clangPath.toFile().exists()) {
+                throw new RuntimeException("Clang not found at: " + clangPath);
+            }
+
+            return clangPath.toString();
+        } catch (Exception e) {
+            ErrorHandler.error("Failed to locate clang executable", e);
+            return null;
+        }
+    }
+
+    /**
+     * Returns the path to the running executable or JAR.
+     */
+    private static String getExecutableLocation() throws URISyntaxException {
+        return getExecutableLocationClass(App.class);
+    }
+
+    private static String getExecutableLocationClass(Class<?> cls) throws URISyntaxException {
+        // Use class location URL and convert to Path
+        return Paths.get(cls.getProtectionDomain().getCodeSource().getLocation().toURI()).toString();
     }
 
     private static boolean isWindows() {
