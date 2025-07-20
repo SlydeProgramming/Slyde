@@ -109,7 +109,7 @@ public class App {
     private static String getClangExecutablePath() {
         String execName = isWindows() ? "clang.exe" : "clang";
         // Assuming clang is bundled in "bin" directory next to your executable
-        Path clangPath = Paths.get("bin/clang", execName);
+        Path clangPath = Paths.get("clang", execName);
         return clangPath.toAbsolutePath().toString();
     }
 

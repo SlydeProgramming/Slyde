@@ -11,5 +11,6 @@ interruption_output.ll
 slyde_module.ll
 run.bat
 logs.txt
+out.exe
 
 bin/
