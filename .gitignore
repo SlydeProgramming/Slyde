@@ -12,5 +12,6 @@ slyde_module.ll
 run.bat
 logs.txt
 out.exe
+clang/
 
 bin/
