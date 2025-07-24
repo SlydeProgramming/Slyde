@@ -100,6 +100,11 @@ public class LLVMGeneratorVersionTwo {
 
             ConstructorNode construct = clas.getConstructor();
 
+
+            if (construct == null){
+                construct = new ConstructorNode(new ArrayList<>(), new BlockNode(new ArrayList<>()));
+            }
+
             List<String> params = new ArrayList<>();
 
             params.add("%" + classIdentifier + "* %this");
