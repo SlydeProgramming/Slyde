@@ -41,6 +41,7 @@ public class App {
 
     private static void compileBuildRun(Path sourceFile) throws IOException, InterruptedException {
         Path llvmFile = Paths.get("out.ll").toAbsolutePath();
+
         Path executable = getExecutablePath();
 
         Compiler.compile(sourceFile.toString(), llvmFile.toString());
@@ -57,7 +58,9 @@ public class App {
     }
 
     private static void compileBuild(Path sourceFile) throws IOException, InterruptedException {
+
         Path llvmFile = Paths.get("out.ll").toAbsolutePath();
+
         Path executable = getExecutablePath();
 
         Compiler.compile(sourceFile.toString(), llvmFile.toString());
@@ -124,8 +127,8 @@ public class App {
 
             return clangPath.toString();
         } catch (Exception e) {
-            ErrorHandler.error("Failed to locate clang executable", e);
-            return null;
+            ErrorHandler.warn("Failed to locate clang executable assuming clang is in env varibales");
+            return "clang";
         }
     }
 

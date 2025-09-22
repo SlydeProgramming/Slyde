@@ -16,7 +16,6 @@ plugins {
 repositories {
     // Use Maven Central for resolving dependencies.
     mavenCentral()
-    jcenter()
     maven{ url = uri("https://jitpack.io")}
     maven{ url = uri("https://raw.githubusercontent.com/graalvm/native-build-tools/snapshots") }
     gradlePluginPortal()
@@ -63,7 +62,7 @@ application {
 }
 
 tasks.named<JavaExec>("run") {
-    workingDir = file("C:/Users/every/Documents/Github/Slyde") // Set the working directory
+    workingDir = rootProject.projectDir // Set the working directory
 }
 
 tasks.jar {

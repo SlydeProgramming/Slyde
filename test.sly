@@ -1,21 +1,17 @@
 
 class Test {
 
-    constructor(){
-
-        print("test was created");
-
+    int one(){
+        return 1;
     }
 
     void wtf(){
-        print("??????");
+        print("man why are you doing this to me");
     }
 
-    int one(){
-        int a = 1;
-        return a;
+    String bobby(){
+        return "bobby";
     }
-
 }
 
 
@@ -24,12 +20,18 @@ main(){
 
     Test test = new Test();
 
-    test.wtf();
+    int here = test.one();
 
-    int here = test.one();;
+    String input = input();
+
 
     if (here == 1){
-        print("omg????");
+        int lol = 99 + 12 - 56;
+        print(test.bobby());
+        print(lol);
+        print("you need help man");
+        print("I need help");
+        print(test.wtf());  
     }
 
 }

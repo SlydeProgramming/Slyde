@@ -28,10 +28,10 @@ constructor:
 
 
 statement: 
-    varDecl 
-    | assignment 
-    | methodCall 
-    | returnStmt 
+    varDecl ';'
+    | assignment ';'
+    | methodCall ';'
+    | returnStmt ';'
     | block 
     | ifStmt 
     | whileStmt 
@@ -40,15 +40,15 @@ statement:
 
 // Variable Declaration
 varDecl: 
-    type IDENTIFIER ('=' expr)? ';';
+    type IDENTIFIER ('=' expr)?;
 
 // Assignments
 assignment: 
-    IDENTIFIER ('[' expr ']')? '=' expr ';';
+    IDENTIFIER ('[' expr ']')? '=' expr;
 
 // Method Calls
 methodCall: 
-    IDENTIFIER ('.' IDENTIFIER)? '(' argList? ')' ';';
+    IDENTIFIER ('.' IDENTIFIER)? '(' argList? ')';
 
 // Arguments
 argList: expr (',' expr)*;
@@ -86,7 +86,7 @@ forStmt:
 
 
 returnStmt:
-    RETURN expr ';';
+    RETURN expr;
 
 
 // Types

@@ -204,7 +204,7 @@ public class AST {
         public <T> void gen(Context<T> ctx) {
             if (ctx.is(HandleProtocol.STANDALONE)) {
 
-                if (type == "void") {
+                if (type.equals("void")) {
                     cm.append(cm.get() + "ret void\n");
                     return;
                 }
@@ -527,8 +527,14 @@ public class AST {
 
         @Override
         public <T> void gen(Context<T> ctx) {
-            ctx.setReturnValues(ctx.findReturnedName(ctx.getContextName() + name),
-                    ctx.findReturnedType(ctx.getContextName() + name));
+            String ctxName = ctx.resolveContext(name);
+
+            if (ctxName == null) {
+                ErrorHandler.error("Unable to resolve variable " + name, line, column);
+            }
+
+            ctx.setReturnValues(ctx.findReturnedName(ctxName + name),
+                    ctx.findReturnedType(ctxName + name));
         }
 
         @Override
@@ -882,6 +888,7 @@ public class AST {
             }
             return str;
         }
+
     }
 
     public static class WhileNode extends ASTNode {
@@ -981,11 +988,27 @@ public class AST {
                         + tIs.get(j);
                 String name = ctx.findReturnedName(lookUp);
                 String type = ctx.findReturnedType(lookUp);
+                if (methodName.equals("print") && !type.equals("i8*")) {
+                    String loaded;
+                    if (type.toCharArray()[type.length() - 1] == '*') {
+                        loaded = cm.load(name + "_l", type.substring(0, type.length() - 1), name);
+                        type = type.substring(0, type.length() - 1);
+                    } else {
+                        loaded = name;
+                    }
+                    cm.append(cm.get() + loaded + "_stringConversion = call i8* @toString_"
+                            + MultiPartTextGenerator.getSlydeType(type) + "( " + type
+                            + " " + loaded + " )\n");
+                    name = loaded + "_stringConversion";
+                    type = "i8*";
+                }
                 adds.add(type + " " + name);
             }
 
             if (caller != null) {
-                String type = ctx.findRegisteredType(caller);
+                String[] typeAndCtx = ctx.findRegisteredType(caller);
+                String type = typeAndCtx[0];
+
                 List<MethodNode> canidates = ctx.findRegisterMethods(type, methodName);
 
                 canidates.removeIf((n) -> {
@@ -1017,12 +1040,13 @@ public class AST {
                 } else {
                     this.methodName = type + "_" + this.methodName + "_" + canidates.get(0).id;
 
-                    adds.addFirst("%" + type + "* %" + ctx.getContextName() + caller);
+                    adds.addFirst("%" + type + "* %" + typeAndCtx[1] + caller);
 
                     this.type = MultiPartTextGenerator.getLLVMType(canidates.get(0).returnType);
                 }
             } else {
                 this.type = LLVMGeneratorVersionTwo.defaultRetRegistery.get(methodName);
+
                 if (this.type == null) {
                     ErrorHandler.error("I cant find this fucking method you dipshit name " + methodName, line, column);
                 }

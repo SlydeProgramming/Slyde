@@ -5,7 +5,9 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import slyde.structure.AST.MainNode;
 import slyde.structure.AST.MethodNode;
+import slyde.utils.ErrorHandler;
 
 public class Context<T> {
 
@@ -62,12 +64,30 @@ public class Context<T> {
         classMethodReg.put(type, registeredMethods);
     }
 
-    public String findRegisteredType(String rawName) {
-        return varTypeReg.get(getContextName() + rawName);
+    public String[] findRegisteredType(String rawName) {
+        String type = varTypeReg.get(getContextName() + rawName);
+        String ctx = getContextName();
+        int index = 1;
+        while (type == null && index < metaData.contextNames.size()) {
+            ctx = getContextName(index, true);
+            type = varTypeReg.get(ctx + rawName);
+            index++;
+        }
+        return new String[] { type, ctx };
     }
 
     public List<MethodNode> findRegisterMethods(String type, String methodName) {
-        List<MethodNode> registeredMethods = new ArrayList<>(classMethodReg.get(type));
+        List<MethodNode> methodRegistry = classMethodReg.get(type);
+        if (methodRegistry == null && obj instanceof MainNode n) {
+            ErrorHandler.error("method " + methodName + " dosent exist for type " + type + "", n.line, n.column);
+        } else if (methodRegistry == null) {
+            try {
+                throw new RuntimeException("");
+            } catch (Exception e) {
+                ErrorHandler.error("method " + methodName + " dosent exist for type " + type + "", e);
+            }
+        }
+        List<MethodNode> registeredMethods = new ArrayList<>(methodRegistry);
 
         registeredMethods.removeIf((n) -> {
             return !n.name.equals(methodName);
@@ -89,6 +109,42 @@ public class Context<T> {
         return res;
     }
 
+    public String resolveContext(String resolveVar) {
+        String ctx = getContextName();
+        String test = findReturnedName(ctx + resolveVar);
+        int index = 1;
+        while (test == null && index < metaData.contextNames.size()) {
+            ctx = getContextName(index, true);
+            test = findReturnedName(ctx + resolveVar);
+            index++;
+        }
+
+        if (test != null) {
+            return ctx;
+        }
+        return null;
+    }
+
+    public String getContextName(int subtractCount, boolean fullName) {
+        if (fullName) {
+            String res = "";
+
+            List<String> add = new ArrayList<>();
+
+            for (int i = 0; i < metaData.contextNames.size() - subtractCount; i++) {
+                add.add(metaData.contextNames.get(i));
+            }
+
+            for (String name : add) {
+                res += name + "_";
+            }
+            return res;
+        } else {
+            return metaData.contextNames.get(metaData.contextNames.size() - subtractCount);
+        }
+
+    }
+
     public String getContextName(int index) {
         return metaData.contextNames.get(index);
     }
@@ -98,12 +154,21 @@ public class Context<T> {
     }
 
     public String findReturnedName(String requestName) {
-        int index = metaData.returnIndex.get(requestName).get(0);
+        List<Integer> nameStorage = metaData.returnIndex.get(requestName);
+        if (nameStorage == null) {
+            System.out.println(requestName);
+            return null;
+        }
+        int index = nameStorage.get(0);
         return metaData.returnValues.get(index);
     }
 
     public String findReturnedType(String requestName) {
-        int index = metaData.returnIndex.get(requestName).get(1);
+        List<Integer> nameStorage = metaData.returnIndex.get(requestName);
+        if (nameStorage == null) {
+            return null;
+        }
+        int index = nameStorage.get(1);
         return metaData.returnValues.get(index);
     }
 

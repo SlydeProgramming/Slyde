@@ -118,7 +118,7 @@ public class ASTGenerator {
     public static ReturnNode createReturnStmt(ReturnStmtContext ctx) {
         String t = currentContext.rType;
         currentContext.rType = null;
-        if (t == "void") {
+        if (t.equals("void")) {
             return new ReturnNode(null, t);
         }
         return new ReturnNode(createASTNode(ctx.expr()), t);

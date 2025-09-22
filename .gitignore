@@ -13,6 +13,8 @@ slyde_module.ll
 run.bat
 logs.txt
 out.exe
+out.o
 clang/
+out
 
 bin/
