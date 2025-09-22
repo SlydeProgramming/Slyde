@@ -32,7 +32,7 @@ define i8* @toString_float(double %f) {
 }
 
 ; toString for boolean
-define i8* @toString_bool(i1 %b) {
+define i8* @toString_boolean(i1 %b) {
     %str = select i1 %b, i8* getelementptr ([5 x i8], [5 x i8]* @str_true, i32 0, i32 0), i8* getelementptr ([6 x i8], [6 x i8]* @str_false, i32 0, i32 0)
     ret i8* %str
 }
