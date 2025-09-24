@@ -172,7 +172,7 @@ public class LLVMGeneratorVersionTwo {
             // Generate code for each statement in the method body
             generateNodesArray(construct.body.statements, context);
 
-            codemanager.append(codemanager.get() + "ret void");
+            codemanager.append(codemanager.get() + "ret void\n");
 
             // Close the method
             codemanager.down();

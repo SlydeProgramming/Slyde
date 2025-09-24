@@ -1,19 +1,10 @@
-class Test {
-
-    int one(String hmmm){
-        return 1;
-    }
-}
-
-class HEHEH{
-
-    constructor(){
-        print(1427368);
-    }
-}
-
 main(){
-    int str = 345 * 34;
+    String str = input("Should I Print it(y/n): ");
 
-    print(str);
+    if (str == "y"){
+        print("it");
+    } else {
+        print("Well you told me not to print");
+    }
+
 }

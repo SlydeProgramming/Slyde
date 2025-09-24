@@ -1,15 +1,9 @@
 declare i32 @puts(i8*)
-
 declare void @llvm.memcpy.p0i8.p0i8.i64(i8* nocapture writeonly, i8* nocapture readonly, i64, i1)
-
 declare i32 @scanf(i8*, ...)
-
 declare i64 @strlen(i8*)
-
 declare noalias i8* @malloc(i64)
-
 declare i32 @sprintf(i8*, i8*, ...)
-
 declare void @free(i8*)
 
 define void @print(i8* %str) {
@@ -98,5 +92,20 @@ define void @move_to_stack(i8* %heapstr, i8* %destination) {
 
     ; return stack pointer
 	ret void
+}
+
+define i8* @concatStrings(i8* %a, i8* %b) {
+  entry:
+  %lenA = call i64 @strlen(i8* %a)
+  %lenB = call i64 @strlen(i8* %b)
+  %total = add i64 %lenA, %lenB
+  %totalPlus1 = add i64 %total, 1
+  %res = call i8* @malloc(i64 %totalPlus1)
+  call void @llvm.memcpy.p0i8.p0i8.i64(i8* %res, i8* %a, i64 %lenA, i32 1, i1 false)
+  %dstB = getelementptr i8, i8* %res, i64 %lenA
+  call void @llvm.memcpy.p0i8.p0i8.i64(i8* %dstB, i8* %b, i64 %lenB, i32 1, i1 false)
+  %nullTerm = getelementptr i8, i8* %res, i64 %total
+  store i8 0, i8* %nullTerm
+  ret i8* %res
 }
 

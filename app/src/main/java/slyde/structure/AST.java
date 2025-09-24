@@ -473,6 +473,7 @@ public class AST {
                 val += cars[i];
             }
             this.value = val.replace("\"", "\\\"");
+            this.value = this.value.replace("\\n", "\n");
         }
 
         @Override
@@ -779,18 +780,84 @@ public class AST {
         public <T> void gen(Context<T> ctx) {
             if (ctx.is(HandleProtocol.GET)) {
 
+                String ogRequest = ctx.getRequestName();
+                String ogRequestName = "%" + ogRequest;
+
                 int lTi = tI++;
                 int rTi = tI++;
-                ctx.setHandleProtocol(HandleProtocol.GET).requestName("left" + lTi);
+                String leftLookUp = ctx.getContextName() + "left" + lTi;
+                String rightLookUp = ctx.getContextName() + "right" + rTi;
+                ctx.setHandleProtocol(HandleProtocol.GET).requestName(leftLookUp);
                 left.gen(ctx);
-                String leftName = ctx.findReturnedName("left" + lTi);
-                String leftType = ctx.findReturnedType("left" + lTi);
-                ctx.setHandleProtocol(HandleProtocol.GET).requestName("right" + rTi);
-                String rightName = ctx.findReturnedName("right" + rTi);
-                String rightType = ctx.findReturnedType("right" + rTi);
+                String leftName = ctx.findReturnedName(leftLookUp);
+                String leftType = ctx.findReturnedType(leftLookUp);
+                ctx.setHandleProtocol(HandleProtocol.GET).requestName(rightLookUp);
+                right.gen(ctx);
+                String rightName = ctx.findReturnedName(rightLookUp);
+                String rightType = ctx.findReturnedType(rightLookUp);
+
+                if (leftType.equals("i8*") && operator.equals("+")) {
+
+                    if (rightType.equals("i8*")) {
+                        cm.append(cm.get() + ogRequestName + " = call i8* @concatStrings(i8* " + leftName + ", i8* "
+                                + rightName + ")\n");
+                        ctx.requestName(ogRequest);
+                        ctx.setReturnValues(ogRequestName, "i8*");
+                    } else if (rightType.equals("i32*") || rightType.equals("i32")) {
+                        String loaded;
+                        if (rightType.equals("i32*")) {
+                            loaded = cm.load(rightName + "_l", "i32",
+                                    rightName);
+                            rightType = "i32";
+                        } else {
+                            loaded = rightName;
+                        }
+                        int tIStr = tI++;
+                        cm.append(cm.get() + loaded + "_stringConversion" + tIStr + " = call i8* @toString_int( "
+                                + rightType
+                                + " " + loaded + " )\n");
+                        cm.append(cm.get() + ogRequestName + " = call i8* @concatStrings(i8* " + leftName + ", i8* "
+                                + loaded + "_stringConversion" + tIStr + ")\n");
+                        ctx.requestName(ogRequest);
+                        ctx.setReturnValues(ogRequestName, "i8*");
+                    } else {
+                        ErrorHandler.error(
+                                "Unsupported operand types " + MultiPartTextGenerator.getSlydeType(leftType) + " and "
+                                        + MultiPartTextGenerator.getSlydeType(rightType) + " for operator " + operator,
+                                line, column);
+                    }
+                } else if (leftType.equals("i32") || leftType.equals("i32*")) {
+                    if (rightType.equals("i32") || leftType.equals("i32*")) {
+
+                        if (rightType.equals("i32*")) {
+                            rightName = cm.load(rightName + "_l", "i32",
+                                    rightName);
+                        }
+
+                        if (leftType.equals("i32*")) {
+                            leftName = cm.load(leftName + "_l", "i32",
+                                    leftName);
+                        }
+
+                        cm.append(cm.get() + ogRequestName + " = add i32 " + leftName + ", "
+                                + rightName + "\n");
+                        ctx.requestName(ogRequest);
+                        ctx.setReturnValues(ogRequestName, "i32");
+                    } else {
+                        ErrorHandler.error(
+                                "Unsupported operand types " + MultiPartTextGenerator.getSlydeType(leftType) + " and "
+                                        + MultiPartTextGenerator.getSlydeType(rightType) + " for operator " + operator,
+                                line, column);
+                    }
+                } else {
+                    ErrorHandler.error(
+                            "Unsupported operand types " + MultiPartTextGenerator.getSlydeType(leftType) + " and "
+                                    + MultiPartTextGenerator.getSlydeType(rightType) + " for operator " + operator,
+                            line, column);
+                }
 
             } else {
-
+                ErrorHandler.warn("Unstored Binary operation", line, column);
             }
         }
 
