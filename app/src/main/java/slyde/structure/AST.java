@@ -839,7 +839,22 @@ public class AST {
                                     leftName);
                         }
 
-                        cm.append(cm.get() + ogRequestName + " = add i32 " + leftName + ", "
+                        String op;
+
+                        if (operator.equals("+")) {
+                            op = "add";
+                        } else if (operator.equals("-")) {
+                            op = "sub";
+                        } else if (operator.equals("*")) {
+                            op = "mul";
+                        } else if (operator.equals("/")) {
+                            op = "sdiv";
+                        } else {
+                            ErrorHandler.error("Unknown operand " + operator, line, column);
+                            return;
+                        }
+
+                        cm.append(cm.get() + ogRequestName + " = " + op + " i32 " + leftName + ", "
                                 + rightName + "\n");
                         ctx.requestName(ogRequest);
                         ctx.setReturnValues(ogRequestName, "i32");
@@ -856,7 +871,9 @@ public class AST {
                             line, column);
                 }
 
-            } else {
+            } else
+
+            {
                 ErrorHandler.warn("Unstored Binary operation", line, column);
             }
         }
@@ -1070,12 +1087,12 @@ public class AST {
 
             int i = 0;
             for (ASTNode node : arguments) {
+                int uTi = tI++;
                 ctx
-                        .requestName(methodName + "_" + node.getClass().getSimpleName() + "_" + tI)
+                        .requestName(methodName + "_" + node.getClass().getSimpleName() + "_" + uTi)
                         .setHandleProtocol(HandleProtocol.GET);
                 node.gen(ctx);
-                tIs.add(tI);
-                tI++;
+                tIs.add(uTi);
                 i++;
             }
 
@@ -1091,7 +1108,7 @@ public class AST {
                 if (type == null) {
                     System.out.println(name);
                     System.out.println(lookUp);
-                    ErrorHandler.error("Um idk the look up did not return value used for lookup: " + lookUp, line,
+                    ErrorHandler.error("Um idk the look up did not return, value used for lookup: " + lookUp, line,
                             column);
                     return;
                 }

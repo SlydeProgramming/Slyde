@@ -1,10 +1,6 @@
 main(){
-    String str = input("Should I Print it(y/n): ");
+    int nope = 72;
 
-    if (str == "y"){
-        print("it");
-    } else {
-        print("Well you told me not to print");
-    }
+    print(nope - 72);
 
 }
