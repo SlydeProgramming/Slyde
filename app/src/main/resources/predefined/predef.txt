@@ -1,5 +1,11 @@
 declare i32 @puts(i8*)
 
+declare void @llvm.memcpy.p0i8.p0i8.i64(i8* nocapture writeonly, i8* nocapture readonly, i64, i1)
+
+declare i32 @scanf(i8*, ...)
+
+declare i64 @strlen(i8*)
+
 declare noalias i8* @malloc(i64)
 
 declare i32 @sprintf(i8*, i8*, ...)
@@ -15,6 +21,7 @@ define void @print(i8* %str) {
 @fmt_float = constant [3 x i8] c"%f\00"
 @str_true  = constant [5 x i8] c"true\00"
 @str_false = constant [6 x i8] c"false\00"
+@fmt_str = constant [7 x i8] c" %[^\0A]\00"
 
 ; -------------------------------
 ; toString for integer
@@ -38,7 +45,7 @@ define i8* @toString_boolean(i1 %b) {
 }
 
 ; toString for string (just returns the string)
-define i8* @toString_str(i8* %s) {
+define i8* @toString_String(i8* %s) {
     ret i8* %s
 }
 
@@ -70,5 +77,26 @@ define i1 @slyde_str_eq(i8* %a, i8* %b) {
 
     equal:
         ret i1 1
+}
+
+
+define void @move_to_stack(i8* %heapstr, i8* %destination) {
+	entry:    
+	%len = call i64 @strlen(i8* %heapstr)
+    %size = add i64 %len, 1
+
+    ; copy from heap to stack
+    call void @llvm.memcpy.p0i8.p0i8.i64(
+        i8* align 8 %destination,
+        i8* align 8 %heapstr,
+        i64 %size,
+        i1 false
+    )
+
+    ; free heap
+    call void @free(i8* %heapstr)
+
+    ; return stack pointer
+	ret void
 }
 

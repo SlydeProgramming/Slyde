@@ -20,6 +20,7 @@ public class LLVMGeneratorVersionTwo {
 
     static {
         defaultRetRegistery.put("print", "void");
+        defaultRetRegistery.put("input", "i8*");
     }
 
     private static void createPreDefinedMethods() {
@@ -72,7 +73,8 @@ public class LLVMGeneratorVersionTwo {
 
                 for (VarDeclNode param : node.params) {
                     String llvmType = MultiPartTextGenerator.getLLVMType(param.type);
-                    params.add(llvmType + " %" + param.name);
+                    params.add(llvmType + " %" + clas.name + "_" + node.name + "_" + param.name);
+                    Context.regiserVar(clas.name + "_" + node.name + "_" + param.name, llvmType);
                 }
 
                 // Add method header (start method definition)

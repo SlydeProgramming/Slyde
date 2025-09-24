@@ -1,32 +1,19 @@
 class Test {
 
-    int one(){
+    int one(String hmmm){
         return 1;
     }
+}
 
-    void wtf(){
-        print("man why are you doing this to me");
-    }
+class HEHEH{
 
-    String bobby(){
-        return "bobby";
+    constructor(){
+        print(1427368);
     }
 }
 
 main(){
-    print("Hello World!");
+    int str = 345 * 34;
 
-    Test test = new Test();
-
-    int here = test.one();
-
-    if (here == 1){
-        int lol = 99 + 12 - 56;
-        print(test.bobby());
-        print(lol);
-        print("you need help man");
-        print("I need help"); 
-        print(false);  
-    }
-
+    print(str);
 }

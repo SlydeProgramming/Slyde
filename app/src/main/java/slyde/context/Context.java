@@ -17,6 +17,8 @@ public class Context<T> {
     private static Map<String, String> varTypeReg = new HashMap<>();
     private static Map<String, List<MethodNode>> classMethodReg = new HashMap<>();
 
+    private static Map<String, List<String>> globalRefrances = new HashMap<>();
+
     public Context<T> setHandleProtocol(HandleProtocol hp) {
         metaData.hp = hp;
         return this;
@@ -25,6 +27,13 @@ public class Context<T> {
     public Context<T> addContextName(String name) {
         metaData.contextNames.add(name);
         return this;
+    }
+
+    public void debug() {
+        varTypeReg.forEach((k, v) -> {
+            System.err.println("CtxName: " + k + " , RegType: " + v);
+        });
+        System.err.println(getContextName());
     }
 
     public Context<T> requestName(String name) {
@@ -112,6 +121,7 @@ public class Context<T> {
     public String resolveContext(String resolveVar) {
         String ctx = getContextName();
         String test = findReturnedName(ctx + resolveVar);
+        String[] rT = findRegisteredType(resolveVar);
         int index = 1;
         while (test == null && index < metaData.contextNames.size()) {
             ctx = getContextName(index, true);
@@ -120,9 +130,13 @@ public class Context<T> {
         }
 
         if (test != null) {
+
             return ctx;
+        } else if (rT[0] != null) {
+            return rT[1];
         }
         return null;
+
     }
 
     public String getContextName(int subtractCount, boolean fullName) {
@@ -156,11 +170,34 @@ public class Context<T> {
     public String findReturnedName(String requestName) {
         List<Integer> nameStorage = metaData.returnIndex.get(requestName);
         if (nameStorage == null) {
-            System.out.println(requestName);
             return null;
         }
         int index = nameStorage.get(0);
         return metaData.returnValues.get(index);
+    }
+
+    public boolean registeredInContext(String varName) {
+        List<String> rVars = globalRefrances.get(getContextName());
+        if (rVars == null) {
+            return false;
+        }
+
+        for (String s : rVars) {
+            if (s.equals(varName)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    public void registerGlobalInCtx(String varName) {
+        List<String> rVars = globalRefrances.get(getContextName());
+        if (rVars == null) {
+            rVars = new ArrayList<>();
+            globalRefrances.put(getContextName(), rVars);
+        }
+
+        rVars.add(varName);
     }
 
     public String findReturnedType(String requestName) {

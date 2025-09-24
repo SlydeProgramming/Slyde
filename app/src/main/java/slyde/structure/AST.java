@@ -272,19 +272,25 @@ public class AST {
         public <T> void gen(Context<T> ctx) {
             if (ctx.is(HandleProtocol.STANDALONE)) {
 
+                String lookUp = ctx.getContextName() + name;
+
                 ctx
-                        .requestName(ctx.getContextName() + name)
+                        .requestName(lookUp)
                         .setHandleProtocol(HandleProtocol.GET);
 
                 value.gen(ctx);
 
-                String actualName = ctx.findReturnedName(ctx.getContextName() + name);
+                String actualName = ctx.findReturnedName(lookUp);
 
                 if (actualName != null) {
-                    if (!actualName.equals("%" + ctx.getContextName() + name)) {
+                    if (!actualName.equals("%" + lookUp)) {
                         cm.append(cm.get() + actualName + " = "
-                                + ctx.findReturnedType(ctx.getContextName() + name) + " "
-                                + ctx.findReturnedName(ctx.getContextName() + name) + "\n");
+                                + ctx.findReturnedType(
+                                        lookUp)
+                                + " "
+                                + ctx.findReturnedName(lookUp) + "\n");
+
+                        Context.regiserVar(lookUp, type);
                     }
                 }
 
@@ -530,9 +536,15 @@ public class AST {
             String ctxName = ctx.resolveContext(name);
 
             if (ctxName == null) {
+                ctx.debug();
+
                 ErrorHandler.error("Unable to resolve variable " + name, line, column);
             }
 
+            if (ctx.findReturnedType(ctxName + name) == null) {
+                ctx.setReturnValues("%" + ctxName + name, MultiPartTextGenerator.getLLVMType(type));
+                return;
+            }
             ctx.setReturnValues(ctx.findReturnedName(ctxName + name),
                     ctx.findReturnedType(ctxName + name));
         }
@@ -670,7 +682,7 @@ public class AST {
                     }
 
                     if (special && !lType.equals("i1")) {
-                        ErrorHandler.error("Logical operators '&&' and '||' require boolean operands (i1)", line,
+                        ErrorHandler.error("Logical operators '&&' and '||' require boolean operands", line,
                                 column);
                         return;
                     }
@@ -761,6 +773,25 @@ public class AST {
             this.left = left;
             this.operator = operator;
             this.right = right;
+        }
+
+        @Override
+        public <T> void gen(Context<T> ctx) {
+            if (ctx.is(HandleProtocol.GET)) {
+
+                int lTi = tI++;
+                int rTi = tI++;
+                ctx.setHandleProtocol(HandleProtocol.GET).requestName("left" + lTi);
+                left.gen(ctx);
+                String leftName = ctx.findReturnedName("left" + lTi);
+                String leftType = ctx.findReturnedType("left" + lTi);
+                ctx.setHandleProtocol(HandleProtocol.GET).requestName("right" + rTi);
+                String rightName = ctx.findReturnedName("right" + rTi);
+                String rightType = ctx.findReturnedType("right" + rTi);
+
+            } else {
+
+            }
         }
 
         @Override
@@ -966,6 +997,7 @@ public class AST {
         @Override
         public <T> void gen(Context<T> ctx) {
             HandleProtocol og = ctx.getHandleProtocol();
+            String ogName = ctx.getRequestName();
 
             List<Integer> tIs = new ArrayList<>();
 
@@ -986,9 +1018,17 @@ public class AST {
             for (int j = 0; j < i; j++) {
                 String lookUp = methodName + "_" + arguments.get(j).getClass().getSimpleName() + "_"
                         + tIs.get(j);
+
                 String name = ctx.findReturnedName(lookUp);
                 String type = ctx.findReturnedType(lookUp);
-                if (methodName.equals("print") && !type.equals("i8*")) {
+                if (type == null) {
+                    System.out.println(name);
+                    System.out.println(lookUp);
+                    ErrorHandler.error("Um idk the look up did not return value used for lookup: " + lookUp, line,
+                            column);
+                    return;
+                }
+                if ((methodName.equals("print") || methodName.equals("input")) && !type.equals("i8*")) {
                     String loaded;
                     if (type.toCharArray()[type.length() - 1] == '*') {
                         loaded = cm.load(name + "_l", type.substring(0, type.length() - 1), name);
@@ -1003,6 +1043,32 @@ public class AST {
                     type = "i8*";
                 }
                 adds.add(type + " " + name);
+                typs.add(type);
+            }
+
+            if (methodName.equals("input")) {
+                if (!ctx.registeredInContext("fmtptr")) {
+                    cm.append(cm.get() + "%" + ctx.getContextName()
+                            + "fmtptr = getelementptr [3 x i8], [3 x i8]* @fmt_str, i32 0, i32 0\n");
+                    ctx.registerGlobalInCtx("fmtptr");
+                }
+                for (String s : adds) {
+                    cm.append(cm.get() + "call void @print(" + s + ")\n");
+                }
+                String buffername = "%" + ctx.getContextName() + "buff" + tI++;
+                String stackBuff = "%" + ctx.getContextName() + "stackBuff" + tI++;
+                String stackptr = "%" + ctx.getContextName() + "stackptr" + tI++;
+                String resName = "%" + ogName;
+                ctx.requestName(ogName);
+                cm.append(cm.get() + buffername + " = call i8* @malloc(i64 256)\n");
+                cm.append(cm.get() + "call i32 (i8*, ...) @scanf(i8* %" + ctx.getContextName() + "fmtptr, i8* "
+                        + buffername + ")\n");
+                cm.append(cm.get() + stackBuff + "= alloca i8*, align 8\n");
+                cm.append(cm.get() + stackptr + " = bitcast i8* " + stackBuff + " to i8*\n");
+                cm.append(cm.get() + "call void @move_to_stack(i8* " + buffername + ", i8* " + stackptr + ")\n");
+                cm.append(cm.get() + resName + " = bitcast i8* " + stackBuff + " to i8*\n");
+                ctx.setReturnValues(resName, "i8*");
+                return;
             }
 
             if (caller != null) {
@@ -1018,7 +1084,7 @@ public class AST {
                 canidates.removeIf((n) -> {
                     int c = 0;
                     for (VarDeclNode v : n.params) {
-                        if (v.type != typs.get(c)) {
+                        if (MultiPartTextGenerator.getLLVMType(v.type) != typs.get(c)) {
                             return true;
                         }
                         c++;
@@ -1048,7 +1114,8 @@ public class AST {
                 this.type = LLVMGeneratorVersionTwo.defaultRetRegistery.get(methodName);
 
                 if (this.type == null) {
-                    ErrorHandler.error("I cant find this fucking method you dipshit name " + methodName, line, column);
+                    ErrorHandler.error("I cant find this fucking method you dipshit name " + methodName, line,
+                            column);
                 }
             }
 
