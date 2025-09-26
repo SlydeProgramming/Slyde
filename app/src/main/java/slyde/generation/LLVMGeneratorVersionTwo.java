@@ -202,6 +202,12 @@ public class LLVMGeneratorVersionTwo {
 
         codemanager.addComment("============== Memory Managment ===============");
 
+        codemanager.append(
+                codemanager.get()
+                        + "%safeExitString_ptr = getelementptr inbounds [1 x i8], [1 x i8]* @safeExitString, i32 0, i32 0\n");
+
+        codemanager.append(codemanager.get() + "call void @print(i8* %safeExitString_ptr)\n");
+
         for (String[] var : NewInstanceNode.objects) {
 
             codemanager.append(

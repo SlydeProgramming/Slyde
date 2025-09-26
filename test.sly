@@ -4,6 +4,4 @@ main(){
     String p2 = input("Enter player 2's name: ");
 
     print(p1 + " is Player 1 " + p2 + " is Player 2");
-
-
 }

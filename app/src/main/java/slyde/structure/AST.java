@@ -409,7 +409,7 @@ public class AST {
         public <T> void gen(Context<T> ctx) {
             if (ctx.is(HandleProtocol.STANDALONE)) {
 
-                cm.append(cm.get() + contents);
+                cm.append(contents + "\n");
 
             } else {
                 ErrorHandler.error(
