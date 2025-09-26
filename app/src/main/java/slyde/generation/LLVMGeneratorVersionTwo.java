@@ -204,7 +204,7 @@ public class LLVMGeneratorVersionTwo {
 
         codemanager.append(
                 codemanager.get()
-                        + "%safeExitString_ptr = getelementptr inbounds [1 x i8], [1 x i8]* @safeExitString, i32 0, i32 0\n");
+                        + "%safeExitString_ptr = getelementptr inbounds [2 x i8], [2 x i8]* @safeExitString, i32 0, i32 0\n");
 
         codemanager.append(codemanager.get() + "call void @print(i8* %safeExitString_ptr)\n");
 
