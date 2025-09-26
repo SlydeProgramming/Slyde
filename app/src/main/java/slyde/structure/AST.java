@@ -397,6 +397,34 @@ public class AST {
         }
     }
 
+    public static class RawNode extends ASTNode {
+
+        public String contents;
+
+        public RawNode(String contents) {
+            this.contents = contents;
+        }
+
+        @Override
+        public <T> void gen(Context<T> ctx) {
+            if (ctx.is(HandleProtocol.STANDALONE)) {
+
+                cm.append(cm.get() + contents);
+
+            } else {
+                ErrorHandler.error(
+                        "Raw blocks of code cannot be accessed from out side of the block (except for a few cases)",
+                        line, column);
+            }
+        }
+
+        @Override
+        public String toString(Indent lvl) {
+            return lvl.get() + "RAW BLOCK";
+        }
+
+    }
+
     public static class MethodNode extends ASTNode {
         public String returnType;
         public String name;

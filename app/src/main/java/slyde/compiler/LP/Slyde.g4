@@ -26,7 +26,6 @@ constructor:
     CONSTRUCT '(' paramList? ')' block;
 
 
-
 statement: 
     varDecl ';'
     | assignment ';'
@@ -36,6 +35,7 @@ statement:
     | ifStmt 
     | whileStmt 
     | forStmt 
+    | raw
     | expr ';';
 
 // Variable Declaration
@@ -111,6 +111,10 @@ MLC:
 
 
 
+raw: RAW_BLOCK | RAW_BLOCKWS;
+
+RAW_BLOCK: 'raw' '{' .*? '}';
+RAW_BLOCKWS: 'raw ' '{' .*? '}';
 
 CLASS: 'class';
 EXTENDS: 'extends';

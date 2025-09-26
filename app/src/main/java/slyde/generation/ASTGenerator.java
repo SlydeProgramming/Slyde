@@ -109,6 +109,12 @@ public class ASTGenerator {
             return createMethodNode((MethodDeclarationContext) tree);
         } else if (tree instanceof ReturnStmtContext) {
             return createReturnStmt((ReturnStmtContext) tree);
+        } else if (tree instanceof RawContext r) {
+            TerminalNode r1 = r.RAW_BLOCK();
+            TerminalNode r2 = r.RAW_BLOCKWS();
+            String str = (r1 != null ? r1.getText() : r2.getText());
+            str = str.substring(r1 != null ? 5 : 6, str.length() - 1);
+            return new RawNode(str);
         } else {
             System.out.println(tree.toStringTree());
         }
@@ -201,7 +207,7 @@ public class ASTGenerator {
         } else if (ctx.methodCall() != null) {
             return createMethodCallNode(ctx.methodCall());
         } else if (ctx.IDENTIFIER() != null) {
-            return (Expr) createTerminalNode(ctx.IDENTIFIER()); // TODO: add support for non local vars
+            return (Expr) createTerminalNode(ctx.IDENTIFIER());
         } else if (ctx.newInstance() != null) {
             return createNewInstanceNode(ctx.newInstance());
         }

@@ -1,5 +1,5 @@
 package slyde.compiler.LP;
-// Generated from ./app/src/main/java/slyde/compiler/LP/Slyde.g4 by ANTLR 4.13.2
+// Generated from app/src/main/java/slyde/compiler/LP/Slyde.g4 by ANTLR 4.13.2
 
 import org.antlr.v4.runtime.ParserRuleContext;
 import org.antlr.v4.runtime.tree.ErrorNode;
@@ -517,6 +517,28 @@ public class SlydeBaseListener implements SlydeListener {
 	 */
 	@Override
 	public void exitNewInstance(SlydeParser.NewInstanceContext ctx) {
+	}
+
+	/**
+	 * {@inheritDoc}
+	 *
+	 * <p>
+	 * The default implementation does nothing.
+	 * </p>
+	 */
+	@Override
+	public void enterRaw(SlydeParser.RawContext ctx) {
+	}
+
+	/**
+	 * {@inheritDoc}
+	 *
+	 * <p>
+	 * The default implementation does nothing.
+	 * </p>
+	 */
+	@Override
+	public void exitRaw(SlydeParser.RawContext ctx) {
 	}
 
 	/**

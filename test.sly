@@ -1,6 +1,9 @@
 main(){
-    int nope = 72;
+    String p1 = input("Enter player 1's name: ");
 
-    print(nope - 72);
+    String p2 = input("Enter player 2's name: ");
+
+    print(p1 + " is Player 1 " + p2 + " is Player 2");
+
 
 }
