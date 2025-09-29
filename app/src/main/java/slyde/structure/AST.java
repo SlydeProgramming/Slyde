@@ -1173,7 +1173,7 @@ public class AST {
                 String resName = "%" + ogName;
                 ctx.requestName(ogName);
                 cm.append(cm.get() + buffername + " = call i8* @malloc(i64 256)\n");
-                cm.append(cm.get() + "call i32 (i8*, ...) @scanf(i8* %" + ctx.getContextName() + "fmtptr, i8* "
+                cm.append(cm.get() + "call i32 (i8*, ...) @slyde_scanf(i8* %" + ctx.getContextName() + "fmtptr, i8* "
                         + buffername + ")\n");
                 cm.append(cm.get() + stackBuff + "= alloca i8*, align 8\n");
                 cm.append(cm.get() + stackptr + " = bitcast i8* " + stackBuff + " to i8*\n");

@@ -6,6 +6,7 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 
 import slyde.compiler.Compiler;
+import slyde.compiler.NativeUtils;
 import slyde.utils.ErrorHandler;
 
 public class App {
@@ -53,7 +54,7 @@ public class App {
             return;
         }
 
-        System.out.println("Running executable...");
+        System.out.println("\033[33mRunning executable...\n\n\033[0m");
         runExecutable(executable);
     }
 
@@ -68,7 +69,7 @@ public class App {
         boolean buildSuccess = runClang(llvmFile, executable);
 
         if (buildSuccess) {
-            System.out.println("Build succeeded. Executable is at: " + executable);
+            System.out.println("\033[33mBuild succeeded. Executable is at: " + executable + "\033[0m");
         } else {
             System.err.println("Build failed.");
         }
@@ -77,9 +78,14 @@ public class App {
     private static boolean runClang(Path llvmFile, Path outputExe) throws IOException, InterruptedException {
         String clangPath = getClangExecutablePath();
 
+        Path myScanfC = NativeUtils.extractResource("/predefined/slyde_scanf.c");
+        Path myPrintC = NativeUtils.extractResource("/predefined/slyde_printf.c");
+
         ProcessBuilder pb = new ProcessBuilder(
                 clangPath,
                 llvmFile.toString(),
+                myScanfC.toString(),
+                myPrintC.toString(),
                 "-o",
                 outputExe.toString());
 
@@ -103,7 +109,7 @@ public class App {
         Process process = pb.start();
         int exitCode = process.waitFor();
 
-        System.out.println("Program exited with code: " + exitCode);
+        System.out.println("\033[33m\n\nProgram exited with code: " + exitCode + "\033[0m");
     }
 
     private static Path getExecutablePath() {
@@ -144,7 +150,7 @@ public class App {
         return Paths.get(cls.getProtectionDomain().getCodeSource().getLocation().toURI()).toString();
     }
 
-    private static boolean isWindows() {
+    public static boolean isWindows() {
         return System.getProperty("os.name").toLowerCase().contains("win");
     }
 }

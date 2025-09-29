@@ -9,6 +9,7 @@ import java.util.List;
 import java.util.Map;
 
 import slyde.context.HandleProtocol;
+import slyde.App;
 import slyde.context.Context;
 import slyde.structure.AST.*;
 
@@ -35,6 +36,23 @@ public class LLVMGeneratorVersionTwo {
         } catch (IOException e) {
             e.printStackTrace();
         }
+
+        codemanager.appendHead("\n");
+
+        String name = "/predefined/" + (App.isWindows() ? "winpredef.txt" : "non-winpredef.txt");
+
+        try (InputStream is = LLVMGeneratorVersionTwo.class.getResourceAsStream(name)) {
+            if (is == null) {
+                System.out.println("Resource not found!");
+                return;
+            }
+            String content = new String(is.readAllBytes(), StandardCharsets.UTF_8);
+            codemanager.appendHead(content);
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+
+        codemanager.appendHead("\n");
 
     }
 
@@ -202,9 +220,12 @@ public class LLVMGeneratorVersionTwo {
 
         codemanager.addComment("============== Memory Managment ===============");
 
+        String count = "" + 2;
+
         codemanager.append(
                 codemanager.get()
-                        + "%safeExitString_ptr = getelementptr inbounds [2 x i8], [2 x i8]* @safeExitString, i32 0, i32 0\n");
+                        + "%safeExitString_ptr = getelementptr inbounds [" + count
+                        + " x i8], [" + count + " x i8]* @safeExitString, i32 0, i32 0\n");
 
         codemanager.append(codemanager.get() + "call void @print(i8* %safeExitString_ptr)\n");
 
