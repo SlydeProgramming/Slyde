@@ -26,7 +26,9 @@ public class LLVMGeneratorVersionTwo {
 
     private static void createPreDefinedMethods() {
 
-        try (InputStream is = LLVMGeneratorVersionTwo.class.getResourceAsStream("/predefined/predef.txt")) {
+        String name = "/predefined/" + (App.isWindows() ? "winpredef.txt" : "non-winpredef.txt");
+
+        try (InputStream is = LLVMGeneratorVersionTwo.class.getResourceAsStream(name)) {
             if (is == null) {
                 System.out.println("Resource not found!");
                 return;
@@ -39,9 +41,7 @@ public class LLVMGeneratorVersionTwo {
 
         codemanager.appendHead("\n");
 
-        String name = "/predefined/" + (App.isWindows() ? "winpredef.txt" : "non-winpredef.txt");
-
-        try (InputStream is = LLVMGeneratorVersionTwo.class.getResourceAsStream(name)) {
+        try (InputStream is = LLVMGeneratorVersionTwo.class.getResourceAsStream("/predefined/predef.txt")) {
             if (is == null) {
                 System.out.println("Resource not found!");
                 return;
