@@ -4,12 +4,11 @@ class HelloWorld{
   constructor(){
     print("hello world!\n");
     print("ohno\n");
-    String val = input("Gay Biths: ");
-    print(val);
   }
 
 }
 
+
 main() {
-  HelloWorld hello = new HelloWorld();
+  HelloWorld hello = new HelloWorld(1 + 1);
 }

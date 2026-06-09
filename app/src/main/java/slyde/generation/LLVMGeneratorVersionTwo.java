@@ -8,261 +8,269 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import slyde.context.HandleProtocol;
 import slyde.App;
 import slyde.compiler.DependancyManager;
 import slyde.context.Context;
-import slyde.structure.AST.*;
+import slyde.context.HandleProtocol;
+import slyde.structure.AST.ASTNode;
+import slyde.structure.AST.BlockNode;
+import slyde.structure.AST.ClassNode;
+import slyde.structure.AST.ConstructorNode;
+import slyde.structure.AST.MainNode;
+import slyde.structure.AST.MethodNode;
+import slyde.structure.AST.NewInstanceNode;
+import slyde.structure.AST.ProgramNode;
+import slyde.structure.AST.VarDeclNode;
 
 public class LLVMGeneratorVersionTwo {
 
-    public static MultiPartTextGenerator codemanager = new MultiPartTextGenerator();
+  public static MultiPartTextGenerator codemanager = new MultiPartTextGenerator();
 
-    public static final Map<String, String> defaultRetRegistery = new HashMap<>();
-    public static final Map<String, Runnable> defaultDepRegistey = new HashMap<>();
-    public static final Map<String, Runnable> nameOverrides = new HashMap<>();
+  public static final Map<String, String> defaultRetRegistery = new HashMap<>();
+  public static final Map<String, Runnable> defaultDepRegistey = new HashMap<>();
+  public static final Map<String, Runnable> nameOverrides = new HashMap<>();
 
-    static {
-        defaultRetRegistery.put("print", "void");
-        defaultRetRegistery.put("input", "i8*");
-        defaultDepRegistey.put("print", DependancyManager::requireOutput);
-        defaultDepRegistey.put("input", DependancyManager::requireInput);
-        defaultDepRegistey.put("window", DependancyManager::requireWindow);
+  static {
+    defaultRetRegistery.put("print", "void");
+    defaultRetRegistery.put("input", "i8*");
+    defaultDepRegistey.put("print", DependancyManager::requireOutput);
+    defaultDepRegistey.put("input", DependancyManager::requireInput);
+    defaultDepRegistey.put("window", DependancyManager::requireWindow);
+  }
+
+  private static void createPreDefinedMethods() {
+
+    String name = "/predefined/" + (App.isWindows() ? "winpredef.ll" : "non-winpredef.ll");
+
+    try (InputStream is = LLVMGeneratorVersionTwo.class.getResourceAsStream(name)) {
+      if (is == null) {
+        System.out.println("Resource not found!");
+        return;
+      }
+      String content = new String(is.readAllBytes(), StandardCharsets.UTF_8);
+      codemanager.appendHead(content);
+    } catch (IOException e) {
+      e.printStackTrace();
     }
 
-    private static void createPreDefinedMethods() {
+    codemanager.appendHead("\n");
 
-        String name = "/predefined/" + (App.isWindows() ? "winpredef.ll" : "non-winpredef.ll");
-
-        try (InputStream is = LLVMGeneratorVersionTwo.class.getResourceAsStream(name)) {
-            if (is == null) {
-                System.out.println("Resource not found!");
-                return;
-            }
-            String content = new String(is.readAllBytes(), StandardCharsets.UTF_8);
-            codemanager.appendHead(content);
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
-
-        codemanager.appendHead("\n");
-
-        try (InputStream is = LLVMGeneratorVersionTwo.class.getResourceAsStream("/predefined/predef.ll")) {
-            if (is == null) {
-                System.out.println("Resource not found!");
-                return;
-            }
-            String content = new String(is.readAllBytes(), StandardCharsets.UTF_8);
-            codemanager.appendHead(content);
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
-
-        codemanager.appendHead("\n");
-
+    try (InputStream is = LLVMGeneratorVersionTwo.class.getResourceAsStream("/predefined/predef.ll")) {
+      if (is == null) {
+        System.out.println("Resource not found!");
+        return;
+      }
+      String content = new String(is.readAllBytes(), StandardCharsets.UTF_8);
+      codemanager.appendHead(content);
+    } catch (IOException e) {
+      e.printStackTrace();
     }
 
-    private static void generateClasses(List<ClassNode> nodes) {
+    codemanager.appendHead("\n");
 
-        for (ClassNode clas : nodes) {
-            // Defines class
-            String classIdentifier = clas.name;
-            codemanager.addCommentHead(classIdentifier);
-            codemanager.appendHead("%" + classIdentifier + " = type {");
+  }
 
-            // class field content
-            if (clas.getFields() != null) {
-                clas.getFields().forEach((field) -> {
-                    codemanager.appendHead(MultiPartTextGenerator.getLLVMType(field.type));
-                    codemanager.appendHead(",");
-                });
+  private static void generateClasses(List<ClassNode> nodes) {
 
-                codemanager.removeLastCharHead();
-            }
-            codemanager.appendHead("}\n");
-            // Class body (methods)
-            codemanager.addComment("============== " + classIdentifier + " ===============");
+    for (ClassNode clas : nodes) {
+      // Defines class
+      String classIdentifier = clas.name;
+      codemanager.addCommentHead(classIdentifier);
+      codemanager.appendHead("%" + classIdentifier + " = type {");
 
-            List<MethodNode> methods = clas
-                    .getMethods();
-            List<VarDeclNode> fields = clas.getFields();
+      // class field content
+      if (clas.getFields() != null) {
+        clas.getFields().forEach((field) -> {
+          codemanager.appendHead(MultiPartTextGenerator.getLLVMType(field.type));
+          codemanager.appendHead(",");
+        });
 
-            // loop thorugh all methods and generate
-            for (MethodNode node : methods) {
-                List<String> params = new ArrayList<>();
+        codemanager.removeLastCharHead();
+      }
+      codemanager.appendHead("}\n");
+      // Class body (methods)
+      codemanager.addComment("============== " + classIdentifier + " ===============");
 
-                Context.registerMethod(classIdentifier, node);
+      List<MethodNode> methods = clas
+          .getMethods();
+      List<VarDeclNode> fields = clas.getFields();
 
-                params.add("%" + classIdentifier + "* %this");
+      // loop thorugh all methods and generate
+      for (MethodNode node : methods) {
+        List<String> params = new ArrayList<>();
 
-                for (VarDeclNode param : node.params) {
-                    String llvmType = MultiPartTextGenerator.getLLVMType(param.type);
-                    params.add(llvmType + " %" + clas.name + "_" + node.name + "_" + param.name);
-                    Context.regiserVar(clas.name + "_" + node.name + "_" + param.name, llvmType);
-                }
+        Context.registerMethod(classIdentifier, node);
 
-                // Add method header (start method definition)
-                codemanager.addMethodHeader(classIdentifier + "_" + node.name + "_" + node.id,
-                        MultiPartTextGenerator.getLLVMType(node.returnType),
-                        params);
+        params.add("%" + classIdentifier + "* %this");
 
-                // Create a context object to pass around for code generation
-                Context<ClassNode> context = new Context<ClassNode>()
-                        .setObj(clas)
-                        .setHandleProtocol(HandleProtocol.STANDALONE)
-                        .addContextName(classIdentifier)
-                        .addContextName(node.name);
-
-                // load all of the fields so they can be accsessed in the body
-                codemanager.methodBodySetup(fields, classIdentifier);
-
-                // Generate code for each statement in the method body
-                generateNodesArray(node.body.statements, context);
-
-                // Close the method
-                codemanager.down();
-                codemanager.append("}\n\n");
-            }
-
-            ConstructorNode construct = clas.getConstructor();
-
-            if (construct == null) {
-                construct = new ConstructorNode(new ArrayList<>(), new BlockNode(new ArrayList<>()));
-            }
-
-            List<String> params = new ArrayList<>();
-
-            params.add("%" + classIdentifier + "* %this");
-
-            for (VarDeclNode param : construct.params) {
-                String llvmType = MultiPartTextGenerator.getLLVMType(param.type);
-                params.add(llvmType + " %" + param.name);
-            }
-
-            // Add method header (start method definition)
-            codemanager.addMethodHeader(classIdentifier + "_constructor",
-                    MultiPartTextGenerator.getLLVMType("void"),
-                    params);
-
-            // Create a context object to pass around for code generation
-            Context<ClassNode> context = new Context<ClassNode>()
-                    .setObj(clas)
-                    .setHandleProtocol(HandleProtocol.STANDALONE)
-                    .addContextName(classIdentifier)
-                    .addContextName("constructor");
-
-            // load all of the fields so they can be accsessed in the body
-            if (fields != null) {
-                int fieldIndex = 0;
-                for (VarDeclNode field : fields) {
-
-                    String fieldName = field.name;
-
-                    // Get pointer to the field inside the struct
-                    String ptrName = "%ptr_" + fieldName;
-                    codemanager.append(codemanager.get() +
-                            String.format("  %s = getelementptr inbounds %%%s, %%%s* %%this, i32 0, i32 %d\n",
-                                    ptrName, classIdentifier, classIdentifier, fieldIndex));
-
-                    fieldIndex++;
-                }
-
-                // set field to default value if set
-                for (VarDeclNode field : fields) {
-                    if (field.value != null) {
-                        // Generate code to evaluate the expression
-                        context
-                                .setHandleProtocol(HandleProtocol.GET)
-                                .requestName(context.getContextName() + field.name);
-                        field.value.gen(context); // should return a %reg
-                        String valueRegister = context.findReturnedName(context.getContextName() + field.name);
-
-                        // Store the result in the field
-                        String fieldPtr = "%ptr_" + field.name;
-                        codemanager.append(codemanager.get() +
-                                "store " + MultiPartTextGenerator.getLLVMType(field.type) + " " + valueRegister + ", " +
-                                MultiPartTextGenerator.getLLVMType(field.type) + "* " + fieldPtr);
-
-                        // Load the field value
-                        String llvmFieldType = MultiPartTextGenerator.getLLVMType(field.type);
-                        String loadedName = "%val_" + field.name;
-                        codemanager.append(String.format("  %s = load %s, %s* %s\n",
-                                loadedName, llvmFieldType, llvmFieldType, "%ptr_" + field.name));
-                    }
-                }
-
-            }
-
-            // Generate code for each statement in the method body
-            generateNodesArray(construct.body.statements, context);
-
-            codemanager.append(codemanager.get() + "ret void\n");
-
-            // Close the method
-            codemanager.down();
-            codemanager.append("}\n\n");
-
+        for (VarDeclNode param : node.params) {
+          String llvmType = MultiPartTextGenerator.getLLVMType(param.type);
+          params.add(llvmType + " %" + clas.name + "_" + node.name + "_" + param.name);
+          Context.regiserVar(clas.name + "_" + node.name + "_" + param.name, llvmType);
         }
 
-    }
+        // Add method header (start method definition)
+        codemanager.addMethodHeader(classIdentifier + "_" + node.name + "_" + node.id,
+            MultiPartTextGenerator.getLLVMType(node.returnType),
+            params);
 
-    private static <T> void generateNodesArray(List<ASTNode> nodes, Context<T> context) {
-        for (ASTNode node : nodes) {
-            context.setHandleProtocol(HandleProtocol.STANDALONE);
-            node.gen(context);
-        }
-    }
+        // Create a context object to pass around for code generation
+        Context<ClassNode> context = new Context<ClassNode>()
+            .setObj(clas)
+            .setHandleProtocol(HandleProtocol.STANDALONE)
+            .addContextName(classIdentifier)
+            .addContextName(node.name);
 
-    private static void generateMainMethod(MainNode main) {
-        codemanager.addComment("============== Main Method ===============");
-        codemanager.addMethodHeader("main", "i32");
+        // load all of the fields so they can be accsessed in the body
+        codemanager.methodBodySetup(fields, classIdentifier);
 
-        Context<MainNode> context = new Context<MainNode>()
-                .setObj(main)
-                .setHandleProtocol(HandleProtocol.STANDALONE)
-                .addContextName("main");
+        // Generate code for each statement in the method body
+        generateNodesArray(node.body.statements, context);
 
-        generateNodesArray(main.body.statements, context);
-
-        codemanager.addComment("============== Memory Managment ===============");
-
-        String count = "" + 2;
-
-        codemanager.append(
-                codemanager.get()
-                        + "%safeExitString_ptr = getelementptr inbounds [" + count
-                        + " x i8], [" + count + " x i8]* @safeExitString, i32 0, i32 0\n");
-
-        codemanager.append(codemanager.get() + "call void @print(i8* %safeExitString_ptr)\n");
-
-        for (String[] var : NewInstanceNode.objects) {
-
-            codemanager.append(
-                    codemanager.get() + "%ptr_cast_" + var[0].replace("%", "_") + " = bitcast " + var[1] + " " + var[0]
-                            + " to i8*\n");
-            codemanager.append(
-                    codemanager.get() + "call void @free(i8* " + "%ptr_cast_" + var[0].replace("%", "_") + ")\n");
-
-        }
-
-        codemanager.append(codemanager.get() + "ret i32 0\n");
-
+        // Close the method
         codemanager.down();
-        codemanager.append("}\n");
+        codemanager.append("}\n\n");
+      }
+
+      ConstructorNode construct = clas.getConstructor();
+
+      if (construct == null) {
+        construct = new ConstructorNode(new ArrayList<>(), new BlockNode(new ArrayList<>()));
+      }
+
+      List<String> params = new ArrayList<>();
+
+      params.add("%" + classIdentifier + "* %this");
+
+      for (VarDeclNode param : construct.params) {
+        String llvmType = MultiPartTextGenerator.getLLVMType(param.type);
+        params.add(llvmType + " %" + param.name);
+      }
+
+      // Add method header (start method definition)
+      codemanager.addMethodHeader(classIdentifier + "_constructor",
+          MultiPartTextGenerator.getLLVMType("void"),
+          params);
+
+      // Create a context object to pass around for code generation
+      Context<ClassNode> context = new Context<ClassNode>()
+          .setObj(clas)
+          .setHandleProtocol(HandleProtocol.STANDALONE)
+          .addContextName(classIdentifier)
+          .addContextName("constructor");
+
+      // load all of the fields so they can be accsessed in the body
+      if (fields != null) {
+        int fieldIndex = 0;
+        for (VarDeclNode field : fields) {
+
+          String fieldName = field.name;
+
+          // Get pointer to the field inside the struct
+          String ptrName = "%ptr_" + fieldName;
+          codemanager.append(codemanager.get() +
+              String.format("  %s = getelementptr inbounds %%%s, %%%s* %%this, i32 0, i32 %d\n",
+                  ptrName, classIdentifier, classIdentifier, fieldIndex));
+
+          fieldIndex++;
+        }
+
+        // set field to default value if set
+        for (VarDeclNode field : fields) {
+          if (field.value != null) {
+            // Generate code to evaluate the expression
+            context
+                .setHandleProtocol(HandleProtocol.GET)
+                .requestName(context.getContextName() + field.name);
+            field.value.gen(context); // should return a %reg
+            String valueRegister = context.findReturnedName(context.getContextName() + field.name);
+
+            // Store the result in the field
+            String fieldPtr = "%ptr_" + field.name;
+            codemanager.append(codemanager.get() +
+                "store " + MultiPartTextGenerator.getLLVMType(field.type) + " " + valueRegister + ", " +
+                MultiPartTextGenerator.getLLVMType(field.type) + "* " + fieldPtr);
+
+            // Load the field value
+            String llvmFieldType = MultiPartTextGenerator.getLLVMType(field.type);
+            String loadedName = "%val_" + field.name;
+            codemanager.append(String.format("  %s = load %s, %s* %s\n",
+                loadedName, llvmFieldType, llvmFieldType, "%ptr_" + field.name));
+          }
+        }
+
+      }
+
+      // Generate code for each statement in the method body
+      generateNodesArray(construct.body.statements, context);
+
+      codemanager.append(codemanager.get() + "ret void\n");
+
+      // Close the method
+      codemanager.down();
+      codemanager.append("}\n\n");
 
     }
 
-    public static String generate(ProgramNode src) {
-        codemanager.addCommentHead("============== Generated LLVM ===============");
-        createPreDefinedMethods();
+  }
 
-        generateClasses(src.classes);
-
-        generateMainMethod(src.main);
-
-        codemanager.addCommentEnd("============== EOF ===============");
-
-        return codemanager.end();
+  private static <T> void generateNodesArray(List<ASTNode> nodes, Context<T> context) {
+    for (ASTNode node : nodes) {
+      context.setHandleProtocol(HandleProtocol.STANDALONE);
+      node.gen(context);
     }
+  }
+
+  private static void generateMainMethod(MainNode main) {
+    codemanager.addComment("============== Main Method ===============");
+    codemanager.addMethodHeader("main", "i32");
+
+    Context<MainNode> context = new Context<MainNode>()
+        .setObj(main)
+        .setHandleProtocol(HandleProtocol.STANDALONE)
+        .addContextName("main");
+
+    generateNodesArray(main.body.statements, context);
+
+    codemanager.addComment("============== Memory Managment ===============");
+
+    String count = "" + 2;
+
+    codemanager.append(
+        codemanager.get()
+            + "%safeExitString_ptr = getelementptr inbounds [" + count
+            + " x i8], [" + count + " x i8]* @safeExitString, i32 0, i32 0\n");
+
+    codemanager.append(codemanager.get() + "call void @print(i8* %safeExitString_ptr)\n");
+
+    for (String[] var : NewInstanceNode.objects) {
+
+      codemanager.append(
+          codemanager.get() + "%ptr_cast_" + var[0].replace("%", "_") + " = bitcast " + var[1] + " " + var[0]
+              + " to i8*\n");
+      codemanager.append(
+          codemanager.get() + "call void @free(i8* " + "%ptr_cast_" + var[0].replace("%", "_") + ")\n");
+
+    }
+
+    codemanager.append(codemanager.get() + "ret i32 0\n");
+
+    codemanager.down();
+    codemanager.append("}\n");
+
+  }
+
+  public static String generate(ProgramNode src) {
+    codemanager.addCommentHead("============== Generated LLVM ===============");
+    createPreDefinedMethods();
+
+    generateClasses(src.classes);
+
+    generateMainMethod(src.main);
+
+    codemanager.addCommentEnd("============== EOF ===============");
+
+    return codemanager.end();
+  }
 
 }

@@ -20,27 +20,27 @@ import slyde.utils.FileHandler;
 
 public class Compiler {
 
-    public static void compile(String path, String outPath) throws IOException {
-        try {
-            PrintStream fileOut = new PrintStream(
-                    new FileOutputStream(Paths.get("logs.txt").toAbsolutePath().toString()));
+  public static void compile(String path, String outPath) throws IOException {
+    try {
+      PrintStream fileOut = new PrintStream(
+          new FileOutputStream(Paths.get("logs.txt").toAbsolutePath().toString()));
 
-            System.setErr(fileOut);
-            CharStream input = CharStreams.fromFileName(path);
+      System.setErr(fileOut);
+      CharStream input = CharStreams.fromFileName(path);
 
-            SlydeLexer lexer = new SlydeLexer(input);
-            CommonTokenStream tokens = new CommonTokenStream(lexer);
-            SlydeParser parser = new SlydeParser(tokens);
-            ProgContext tree = parser.prog();
+      SlydeLexer lexer = new SlydeLexer(input);
+      CommonTokenStream tokens = new CommonTokenStream(lexer);
+      SlydeParser parser = new SlydeParser(tokens);
+      ProgContext tree = parser.prog();
 
-            ProgramNode prog = ASTGenerator.generateAST(tree);
+      ProgramNode prog = ASTGenerator.generateAST(tree);
 
-            FileHandler.writeFile(outPath, LLVMGeneratorVersionTwo.generate(prog));
-        } catch (Exception e) {
-            String out = FileHandler.readFile(Paths.get("logs.txt").toAbsolutePath().toString());
-            ErrorHandler.error(out, e);
-        }
-
+      FileHandler.writeFile(outPath, LLVMGeneratorVersionTwo.generate(prog));
+    } catch (Exception e) {
+      String out = FileHandler.readFile(Paths.get("logs.txt").toAbsolutePath().toString());
+      ErrorHandler.error(out, e);
     }
+
+  }
 
 }

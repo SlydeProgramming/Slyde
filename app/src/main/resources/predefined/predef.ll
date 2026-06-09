@@ -11,9 +11,9 @@ define void @print(i8* %str) {
     ret void
 }
 
-@fmt_int   = constant [3 x i8] c"%d\00"
+@fmt_int = constant [3 x i8] c"%d\00"
 @fmt_float = constant [3 x i8] c"%f\00"
-@str_true  = constant [5 x i8] c"true\00"
+@str_true = constant [5 x i8] c"true\00"
 @str_false = constant [6 x i8] c"false\00"
 @fmt_str = constant [7 x i8] c" %[^\0A]\00"
 @safeExitString = private constant [2 x i8] c"\0A\00"
