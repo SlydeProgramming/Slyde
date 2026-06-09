@@ -1,0 +1,11 @@
+{
+	"InstallScripts" : 
+	[
+		"/Users/arvankadkol/Documents/Github/Slyde/app/src/main/resources/native/glfw/build/cmake_install.cmake",
+		"/Users/arvankadkol/Documents/Github/Slyde/app/src/main/resources/native/glfw/build/src/cmake_install.cmake",
+		"/Users/arvankadkol/Documents/Github/Slyde/app/src/main/resources/native/glfw/build/examples/cmake_install.cmake",
+		"/Users/arvankadkol/Documents/Github/Slyde/app/src/main/resources/native/glfw/build/tests/cmake_install.cmake",
+		"/Users/arvankadkol/Documents/Github/Slyde/app/src/main/resources/native/glfw/build/docs/cmake_install.cmake"
+	],
+	"Parallel" : false
+}

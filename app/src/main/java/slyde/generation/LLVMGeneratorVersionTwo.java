@@ -10,6 +10,7 @@ import java.util.Map;
 
 import slyde.context.HandleProtocol;
 import slyde.App;
+import slyde.compiler.DependancyManager;
 import slyde.context.Context;
 import slyde.structure.AST.*;
 
@@ -17,16 +18,21 @@ public class LLVMGeneratorVersionTwo {
 
     public static MultiPartTextGenerator codemanager = new MultiPartTextGenerator();
 
-    public static Map<String, String> defaultRetRegistery = new HashMap<>();
+    public static final Map<String, String> defaultRetRegistery = new HashMap<>();
+    public static final Map<String, Runnable> defaultDepRegistey = new HashMap<>();
+    public static final Map<String, Runnable> nameOverrides = new HashMap<>();
 
     static {
         defaultRetRegistery.put("print", "void");
         defaultRetRegistery.put("input", "i8*");
+        defaultDepRegistey.put("print", DependancyManager::requireOutput);
+        defaultDepRegistey.put("input", DependancyManager::requireInput);
+        defaultDepRegistey.put("window", DependancyManager::requireWindow);
     }
 
     private static void createPreDefinedMethods() {
 
-        String name = "/predefined/" + (App.isWindows() ? "winpredef.txt" : "non-winpredef.txt");
+        String name = "/predefined/" + (App.isWindows() ? "winpredef.ll" : "non-winpredef.ll");
 
         try (InputStream is = LLVMGeneratorVersionTwo.class.getResourceAsStream(name)) {
             if (is == null) {
@@ -41,7 +47,7 @@ public class LLVMGeneratorVersionTwo {
 
         codemanager.appendHead("\n");
 
-        try (InputStream is = LLVMGeneratorVersionTwo.class.getResourceAsStream("/predefined/predef.txt")) {
+        try (InputStream is = LLVMGeneratorVersionTwo.class.getResourceAsStream("/predefined/predef.ll")) {
             if (is == null) {
                 System.out.println("Resource not found!");
                 return;
@@ -258,4 +264,5 @@ public class LLVMGeneratorVersionTwo {
 
         return codemanager.end();
     }
+
 }

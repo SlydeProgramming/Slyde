@@ -1,12 +1,13 @@
 #include <stdio.h>
 #include <stdarg.h>
 
-int slyde_printf(const char *fmt, ...) {
-    va_list args;
-    va_start(args, fmt);
-    int ret = vprintf(fmt, args);
-    va_end(args);
+int slyde_printf(const char *fmt, ...)
+{
+  va_list args;
+  va_start(args, fmt);
+  int ret = vprintf(fmt, args);
+  va_end(args);
 
-    fflush(stdout);
-    return ret;
+  fflush(stdout);
+  return ret;
 }

@@ -1,7 +1,35 @@
+class Test{
+    
+    constructor(){
+        print("aarnav is aarnav");
+    }
+
+}
+
+
 main(){
-    String p1 = input("Enter player 1's name: ");
+
+    raw{
+    entry:
+    br label %start
+    start:
+    }
+
+    String p1 = input("\nEnter player 1's name: ");
 
     String p2 = input("Enter player 2's name: ");
 
-    print(p1 + " is Player 1 " + p2 + " is Player 2");
+    print(p1 + " is Player 1 " + p2 + " is Player 2\n");
+
+    String do = input("\nPlay again? (y/n): ");
+
+    boolean hi = do == "y";
+
+    raw{
+    br i1 %main_hi,  label %start, label %c
+    c:
+    }
+
+
+
 }

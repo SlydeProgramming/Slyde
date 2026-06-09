@@ -1,5 +1,11 @@
 {
   "java.configuration.updateBuildConfiguration": "automatic",
   "java.debug.settings.onBuildFailureProceed": true,
-  "java.compile.nullAnalysis.mode": "automatic"
+  "java.compile.nullAnalysis.mode": "automatic",
+  "files.associations": {
+    "glfw3.h": "c",
+    "stdarg.h": "c",
+    "stdio.h": "c",
+    "_stdio.h": "c"
+  }
 }

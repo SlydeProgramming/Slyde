@@ -4,153 +4,205 @@ import java.io.IOException;
 import java.net.URISyntaxException;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.ArrayList;
+import java.util.List;
 
 import slyde.compiler.Compiler;
-import slyde.compiler.NativeUtils;
+import slyde.compiler.DependancyManager;
 import slyde.utils.ErrorHandler;
 
 public class App {
 
-    public static String target;
+  public static String target;
+  public static final OS operatingSystem = getOperatingSystem();
 
-    public static void main(String[] args) throws IOException, InterruptedException {
-        if (args.length < 2) {
-            System.err.println("Usage: slyde <command> <source-file>");
-            System.err.println("Commands:");
-            System.err.println("  run   <file>   Compile, build, and run the Slyde file");
-            System.err.println("  build <file>   Compile and build the Slyde file without running");
-            return;
-        }
-
-        String command = args[0].toLowerCase();
-        Path sourceFile = Paths.get(args[1]).toAbsolutePath();
-
-        target = sourceFile.toString();
-
-        switch (command) {
-            case "run":
-                compileBuildRun(sourceFile);
-                break;
-            case "build":
-                compileBuild(sourceFile);
-                break;
-            default:
-                System.err.println("Unknown command: " + command);
-                System.err.println("Use 'run' or 'build'");
-        }
+  public static void main(String[] args) throws IOException, InterruptedException {
+    if (args.length < 2) {
+      System.err.println("Usage: slyde <command> <source-file>");
+      System.err.println("Commands:");
+      System.err.println("  run   <file>   Compile, build, and run the Slyde file");
+      System.err.println("  build <file>   Compile and build the Slyde file without running");
+      return;
     }
 
-    private static void compileBuildRun(Path sourceFile) throws IOException, InterruptedException {
-        Path llvmFile = Paths.get("out.ll").toAbsolutePath();
+    String command = args[0].toLowerCase();
+    Path sourceFile = Paths.get(args[1]).toAbsolutePath();
 
-        Path executable = getExecutablePath();
+    target = sourceFile.toString();
 
-        Compiler.compile(sourceFile.toString(), llvmFile.toString());
+    switch (command) {
+      case "run":
+        compileBuildRun(sourceFile);
+        break;
+      case "build":
+        compileBuild(sourceFile);
+        break;
+      default:
+        System.err.println("Unknown command: " + command);
+        System.err.println("Use 'run' or 'build'");
+    }
+  }
 
-        boolean buildSuccess = runClang(llvmFile, executable);
+  private static void compileBuildRun(Path sourceFile) throws IOException, InterruptedException {
+    Path llvmFile = Paths.get("out.ll").toAbsolutePath();
 
-        if (!buildSuccess) {
-            System.err.println("Build failed. Aborting run.");
-            return;
-        }
+    Path executable = getExecutablePath();
 
-        System.out.println("\033[33mRunning executable...\n\n\033[0m");
-        runExecutable(executable);
+    Compiler.compile(sourceFile.toString(), llvmFile.toString());
+
+    boolean buildSuccess = runClang(llvmFile, executable);
+
+    if (!buildSuccess) {
+      System.err.println("Build failed. Aborting run.");
+      return;
     }
 
-    private static void compileBuild(Path sourceFile) throws IOException, InterruptedException {
+    System.out.println("\033[33mRunning executable...\n\n\033[0m");
+    runExecutable(executable);
+  }
 
-        Path llvmFile = Paths.get("out.ll").toAbsolutePath();
+  private static void compileBuild(Path sourceFile) throws IOException, InterruptedException {
 
-        Path executable = getExecutablePath();
+    Path llvmFile = Paths.get("out.ll").toAbsolutePath();
 
-        Compiler.compile(sourceFile.toString(), llvmFile.toString());
+    Path executable = getExecutablePath();
 
-        boolean buildSuccess = runClang(llvmFile, executable);
+    Compiler.compile(sourceFile.toString(), llvmFile.toString());
 
-        if (buildSuccess) {
-            System.out.println("\033[33mBuild succeeded. Executable is at: " + executable + "\033[0m");
-        } else {
-            System.err.println("Build failed.");
-        }
+    boolean buildSuccess = runClang(llvmFile, executable);
+
+    if (buildSuccess) {
+      System.out.println("\033[33mBuild succeeded. Executable is at: " + executable + "\033[0m");
+    } else {
+      System.err.println("Build failed.");
+    }
+  }
+
+  public static void downloadAndBuildGLFW() throws IOException, InterruptedException {
+    String os = System.getProperty("os.name").toLowerCase();
+    ProcessBuilder pb;
+
+    if (os.contains("mac")) {
+      pb = new ProcessBuilder("sh", "-c",
+          "curl -L https://github.com/glfw/glfw/releases/download/3.4/glfw-3.4.zip -o glfw.zip && " +
+              "unzip glfw.zip && cd glfw-3.4 && cmake . && make && sudo make install");
+    } else if (os.contains("linux")) {
+      pb = new ProcessBuilder("sh", "-c",
+          "wget https://github.com/glfw/glfw/releases/download/3.4/glfw-3.4.tar.gz && " +
+              "tar -xzf glfw-3.4.tar.gz && cd glfw-3.4 && cmake . && make && sudo make install");
+    } else if (os.contains("win")) {
+      pb = new ProcessBuilder("powershell", "-Command",
+          "curl -L -o glfw.zip https://github.com/glfw/glfw/releases/download/3.4/glfw-3.4.bin.WIN64.zip; " +
+              "tar -xf glfw.zip");
+    } else {
+      throw new RuntimeException("Unsupported OS for auto GLFW install");
     }
 
-    private static boolean runClang(Path llvmFile, Path outputExe) throws IOException, InterruptedException {
-        String clangPath = getClangExecutablePath();
+    pb.inheritIO();
+    Process p = pb.start();
+    int exitCode = p.waitFor();
+    if (exitCode != 0)
+      throw new RuntimeException("GLFW download/build failed");
+  }
 
-        Path myScanfC = NativeUtils.extractResource("/predefined/slyde_scanf.c");
-        Path myPrintC = NativeUtils.extractResource("/predefined/slyde_printf.c");
+  private static boolean runClang(Path llvmFile, Path outputExe) throws IOException, InterruptedException {
+    String clangPath = getClangExecutablePath();
 
-        ProcessBuilder pb = new ProcessBuilder(
-                clangPath,
-                llvmFile.toString(),
-                myScanfC.toString(),
-                myPrintC.toString(),
-                "-o",
-                outputExe.toString());
+    List<String> command = new ArrayList<>();
 
-        pb.inheritIO(); // Forward output/error to console
-        Process process = pb.start();
-        int exitCode = process.waitFor();
+    command.add(clangPath);
+    command.add(llvmFile.toString());
+    command.addAll(DependancyManager.compileDependancies());
+    command.add("-o");
+    command.add(outputExe.toString());
 
-        return exitCode == 0;
+    ProcessBuilder pb = new ProcessBuilder(command);
+
+    pb.inheritIO(); // Forward output/error to console
+    Process process = pb.start();
+    int exitCode = process.waitFor();
+
+    return exitCode == 0;
+  }
+
+  private static void runExecutable(Path executable) throws IOException, InterruptedException {
+    ProcessBuilder pb = new ProcessBuilder();
+
+    if (isWindows()) {
+      pb.command(executable.toString());
+    } else {
+      pb.command("./" + executable.getFileName().toString());
     }
 
-    private static void runExecutable(Path executable) throws IOException, InterruptedException {
-        ProcessBuilder pb = new ProcessBuilder();
+    pb.inheritIO();
+    Process process = pb.start();
+    int exitCode = process.waitFor();
 
-        if (isWindows()) {
-            pb.command(executable.toString());
-        } else {
-            pb.command("./" + executable.getFileName().toString());
-        }
+    System.out.println("\033[33m\n\nProgram exited with code: " + exitCode + "\033[0m");
+  }
 
-        pb.inheritIO();
-        Process process = pb.start();
-        int exitCode = process.waitFor();
+  private static Path getExecutablePath() {
+    String execName = isWindows() ? "out.exe" : "out";
+    return Paths.get(execName).toAbsolutePath();
+  }
 
-        System.out.println("\033[33m\n\nProgram exited with code: " + exitCode + "\033[0m");
+  private static String getClangExecutablePath() {
+    String execName = isWindows() ? "clang.exe" : "clang";
+
+    try {
+      // This gets the path of the running executable (slyde.exe) reliably
+      Path exePath = Paths.get(
+          getExecutableLocation()).getParent();
+
+      Path clangPath = exePath.resolve("clang").resolve(execName);
+
+      if (!clangPath.toFile().exists()) {
+        throw new RuntimeException("Clang not found at: " + clangPath);
+      }
+
+      return clangPath.toString();
+    } catch (Exception e) {
+      ErrorHandler.warn("Failed to locate clang executable assuming clang is in env varibales");
+      return "clang";
     }
+  }
 
-    private static Path getExecutablePath() {
-        String execName = isWindows() ? "out.exe" : "out";
-        return Paths.get(execName).toAbsolutePath();
+  /**
+   * Returns the path to the running executable or JAR.
+   */
+  private static String getExecutableLocation() throws URISyntaxException {
+    return getExecutableLocationClass(App.class);
+  }
+
+  private static String getExecutableLocationClass(Class<?> cls) throws URISyntaxException {
+    // Use class location URL and convert to Path
+    return Paths.get(cls.getProtectionDomain().getCodeSource().getLocation().toURI()).toString();
+  }
+
+  public static boolean isWindows() {
+    return System.getProperty("os.name").toLowerCase().contains("win");
+  }
+
+  public static OS getOperatingSystem() {
+    return OS.fromName(System.getProperty("os.name").toLowerCase());
+  }
+
+  public static enum OS {
+    MAC,
+    WINDOWS,
+    LINUX,
+    UNKNOWN;
+
+    private static OS fromName(String name) {
+      if (name.contains("win")) {
+        return WINDOWS;
+      } else if (name.contains("mac")) {
+        return MAC;
+      } else if (name.contains("linux")) {
+        return LINUX;
+      } else {
+        return UNKNOWN;
+      }
     }
-
-    private static String getClangExecutablePath() {
-        String execName = isWindows() ? "clang.exe" : "clang";
-
-        try {
-            // This gets the path of the running executable (slyde.exe) reliably
-            Path exePath = Paths.get(
-                    getExecutableLocation()).getParent();
-
-            Path clangPath = exePath.resolve("clang").resolve(execName);
-
-            if (!clangPath.toFile().exists()) {
-                throw new RuntimeException("Clang not found at: " + clangPath);
-            }
-
-            return clangPath.toString();
-        } catch (Exception e) {
-            ErrorHandler.warn("Failed to locate clang executable assuming clang is in env varibales");
-            return "clang";
-        }
-    }
-
-    /**
-     * Returns the path to the running executable or JAR.
-     */
-    private static String getExecutableLocation() throws URISyntaxException {
-        return getExecutableLocationClass(App.class);
-    }
-
-    private static String getExecutableLocationClass(Class<?> cls) throws URISyntaxException {
-        // Use class location URL and convert to Path
-        return Paths.get(cls.getProtectionDomain().getCodeSource().getLocation().toURI()).toString();
-    }
-
-    public static boolean isWindows() {
-        return System.getProperty("os.name").toLowerCase().contains("win");
-    }
+  }
 }

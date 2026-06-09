@@ -1,0 +1,105 @@
+declare i32 @puts(i8*)
+declare void @llvm.memcpy.p0i8.p0i8.i64(i8* nocapture writeonly, i8* nocapture readonly, i64, i1)
+declare i64 @strlen(i8*)
+declare noalias i8* @malloc(i64)
+declare i32 @sprintf(i8*, i8*, ...)
+declare void @free(i8*)
+
+
+define void @print(i8* %str) {
+    call i32 @slyde_printf(i8* %str)
+    ret void
+}
+
+@fmt_int   = constant [3 x i8] c"%d\00"
+@fmt_float = constant [3 x i8] c"%f\00"
+@str_true  = constant [5 x i8] c"true\00"
+@str_false = constant [6 x i8] c"false\00"
+@fmt_str = constant [7 x i8] c" %[^\0A]\00"
+@safeExitString = private constant [2 x i8] c"\0A\00"
+
+
+define i8* @toString_int(i32 %n) {
+    %buf = call i8* @malloc(i64 12)
+    call i32 (i8*, i8*, ...) @sprintf(i8* %buf, i8* getelementptr ([4 x i8], [4 x i8]* @fmt_int, i32 0, i32 0), i32 %n)
+    ret i8* %buf
+}
+
+define i8* @toString_double(double %f) {
+    %buf = call i8* @malloc(i64 32)
+    call i32 (i8*, i8*, ...) @sprintf(i8* %buf, i8* getelementptr ([5 x i8], [5 x i8]* @fmt_float, i32 0, i32 0), double %f)
+    ret i8* %buf
+}
+
+define i8* @toString_boolean(i1 %b) {
+    %str = select i1 %b, i8* getelementptr ([5 x i8], [5 x i8]* @str_true, i32 0, i32 0), i8* getelementptr ([6 x i8], [6 x i8]* @str_false, i32 0, i32 0)
+    ret i8* %str
+}
+
+define i8* @toString_String(i8* %s) {
+    ret i8* %s
+}
+
+define i1 @slyde_str_eq(i8* %a, i8* %b) {
+    entry:
+        br label %loop
+
+    loop:
+        %a_char_ptr = phi i8* [ %a, %entry ], [ %a_next, %loop_body ]
+        %b_char_ptr = phi i8* [ %b, %entry ], [ %b_next, %loop_body ]
+
+        %a_char = load i8, i8* %a_char_ptr
+        %b_char = load i8, i8* %b_char_ptr
+
+        %chars_equal = icmp eq i8 %a_char, %b_char
+        br i1 %chars_equal, label %check_end, label %not_equal
+
+    check_end:
+        %is_end = icmp eq i8 %a_char, 0
+        br i1 %is_end, label %equal, label %loop_body
+
+    loop_body: 
+        %a_next = getelementptr i8, i8* %a_char_ptr, i32 1
+        %b_next = getelementptr i8, i8* %b_char_ptr, i32 1
+        br label %loop
+
+    not_equal:
+        ret i1 0
+
+    equal:
+        ret i1 1
+}
+
+
+define void @move_to_stack(i8* %heapstr, i8* %destination) {
+	entry:    
+	%len = call i64 @strlen(i8* %heapstr)
+    %size = add i64 %len, 1
+
+    call void @llvm.memcpy.p0i8.p0i8.i64(
+        i8* align 8 %destination,
+        i8* align 8 %heapstr,
+        i64 %size,
+        i1 false
+    )
+
+    call void @free(i8* %heapstr)
+
+	ret void
+}
+
+define i8* @concatStrings(i8* %a, i8* %b) {
+  entry:
+  %lenA = call i64 @strlen(i8* %a)
+  %lenB = call i64 @strlen(i8* %b)
+  %total = add i64 %lenA, %lenB
+  %totalPlus1 = add i64 %total, 1
+  %res = call i8* @malloc(i64 %totalPlus1)
+  call void @llvm.memcpy.p0i8.p0i8.i64(i8* %res, i8* %a, i64 %lenA, i32 1, i1 false)
+  %dstB = getelementptr i8, i8* %res, i64 %lenA
+  call void @llvm.memcpy.p0i8.p0i8.i64(i8* %dstB, i8* %b, i64 %lenB, i32 1, i1 false)
+  %nullTerm = getelementptr i8, i8* %res, i64 %total
+  store i8 0, i8* %nullTerm
+  ret i8* %res
+}
+

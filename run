@@ -1,0 +1,5 @@
+#!/bin/bash
+
+
+
+java -jar app/build/libs/app-all.jar run $1

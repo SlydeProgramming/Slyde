@@ -8,6 +8,7 @@ import org.antlr.v4.runtime.ParserRuleContext;
 import org.antlr.v4.runtime.Token;
 
 import slyde.context.HandleProtocol;
+import slyde.compiler.DependancyManager;
 import slyde.context.Context;
 import slyde.generation.LLVMGeneratorVersionTwo;
 import slyde.generation.MultiPartTextGenerator;
@@ -1154,11 +1155,15 @@ public class AST {
                     name = loaded + "_stringConversion";
                     type = "i8*";
                 }
+                if (methodName.equals("print")) {
+                    DependancyManager.requireOutput();
+                }
                 adds.add(type + " " + name);
                 typs.add(type);
             }
 
             if (methodName.equals("input")) {
+                DependancyManager.requireInput();
                 if (!ctx.registeredInContext("fmtptr")) {
                     cm.append(cm.get() + "%" + ctx.getContextName()
                             + "fmtptr = getelementptr [3 x i8], [3 x i8]* @fmt_str, i32 0, i32 0\n");

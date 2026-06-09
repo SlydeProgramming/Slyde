@@ -3,7 +3,6 @@
 .DS_Store
 
 # Ignore Gradle build output directory
-build
 store
 a.exe
 null
@@ -18,3 +17,5 @@ clang/
 out
 
 bin/
+
+app/build
